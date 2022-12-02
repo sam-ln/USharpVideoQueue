@@ -6,27 +6,41 @@ using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using VRC.Udon;
 using UdonSharp;
+using UdonSharp.Video;
+using System.Reflection;
+using USharpVideoQueue.Tests.Mock;
 
 namespace USharpVideoQueue.Tests.Editor
 {
-    public class BasicTest
+    public class VideoQueueTest
     {
+        private USharpVideoPlayerMock videoPlayer;
         private VideoQueue queue;
 
         [SetUp]
-        public void Prepare() {
+        public void Prepare()
+        {
+            videoPlayer = new GameObject().AddComponent<USharpVideoPlayerMock>();
             queue = new GameObject().AddComponent<VideoQueue>();
-            queue.Start();
+            queue.VideoPlayer = videoPlayer;
+            queue.Start(); 
         }
 
-        /**
-        * 
-        */
+
         [Test]
         public void CreateBehavior()
-        {  
+        {
             Assert.NotNull(queue);
-            Assert.True(queue.Initialized);    
+            Assert.True(queue.Initialized);
+            Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
+        }
+
+        [Test]
+        public void QueueVideo()
+        {
+            var url = new VRCUrl("https://www.youtube.com/watch?v=3dm_5qWWDV8");
+            queue.QueueVideo(url);
+            Assert.AreEqual(url, videoPlayer.Url);
         }
 
 

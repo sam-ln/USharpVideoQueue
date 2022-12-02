@@ -8,7 +8,9 @@
         "VRC.Udon",
         "VRC.SDKBase",
         "VRC.SDK3",
-        "USharpVideoQueue.Runtime"
+        "UdonSharp.Video",
+        "USharpVideoQueue.Runtime",
+        "USharpVideoQueue.Tests.Mock"
     ],
     "includePlatforms": [
         "Editor"
@@ -17,7 +19,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "VRCSDKBase.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

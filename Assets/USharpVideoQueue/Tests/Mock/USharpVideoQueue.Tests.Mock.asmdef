@@ -1,0 +1,16 @@
+{
+    "name": "USharpVideoQueue.Tests.Mock",
+    "references": [
+        "UdonSharp.Runtime",
+        "UdonSharp.Video"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
