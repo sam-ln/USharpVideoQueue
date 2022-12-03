@@ -16,6 +16,7 @@ namespace USharpVideoQueue.Runtime
         internal void Start()
         {
             Initialized = true;
+            VideoPlayer.RegisterCallbackReceiver(this);
             Debug.Log("Started");
         }
 

@@ -7,7 +7,6 @@ using VRC.SDKBase;
 using VRC.Udon;
 using UdonSharp;
 using UdonSharp.Video;
-using System.Reflection;
 using USharpVideoQueue.Tests.Mock;
 
 namespace USharpVideoQueue.Tests.Editor
@@ -21,9 +20,10 @@ namespace USharpVideoQueue.Tests.Editor
         public void Prepare()
         {
             videoPlayer = new GameObject().AddComponent<USharpVideoPlayerMock>();
+            videoPlayer.Start();
             queue = new GameObject().AddComponent<VideoQueue>();
-            queue.VideoPlayer = videoPlayer;
-            queue.Start(); 
+            queue.VideoPlayer = videoPlayer;   
+            queue.Start();
         }
 
 
@@ -33,6 +33,12 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.NotNull(queue);
             Assert.True(queue.Initialized);
             Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
+        }
+
+        [Test]
+        public void CallbackRegistered()
+        {
+            Assert.Contains(queue, videoPlayer._registeredCallbackReceivers);
         }
 
         [Test]
