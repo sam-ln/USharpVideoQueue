@@ -110,13 +110,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: queuedVideo
+      Data: queuedVideos
     - Name: $v
       Entry: 7
       Data: 6|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: queuedVideo
+      Data: queuedVideos
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 7|System.RuntimeType, mscorlib

@@ -44,11 +44,24 @@ namespace USharpVideoQueue.Tests.Editor
      
 
         [Test]
-        public void QueueVideo()
+        public void QueueAndFinishVideo()
         {
-            var url = new VRCUrl("https://www.youtube.com/watch?v=3dm_5qWWDV8");
-            queue.QueueVideo(url);
-            vpMock.Verify((vp => vp.PlayVideo(url)), Times.Once);
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            queue.SendCustomEvent("OnUSharpVideoEnd");
+            vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
+        }
+
+        [Test]
+        public void QueueMultipleVideo() {
+            var url1 = new VRCUrl("https://url.one");
+            var url2 = new VRCUrl("https://url.two");
+            queue.QueueVideo(url1);
+            queue.QueueVideo(url2);
+            vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
+            queue.SendCustomEvent("OnUSharpVideoEnd");
+            vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
+            vpMock.Verify((vp => vp.PlayVideo(url2)), Times.Once);
         }
 
 
