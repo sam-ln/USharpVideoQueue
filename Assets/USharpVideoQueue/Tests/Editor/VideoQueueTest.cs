@@ -53,7 +53,7 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
-        public void QueueMultipleVideo() {
+        public void QueueMultipleVideos() {
             var url1 = new VRCUrl("https://url.one");
             var url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url1);
