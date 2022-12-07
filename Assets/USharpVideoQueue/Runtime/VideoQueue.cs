@@ -3,7 +3,6 @@ using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
-using VRC.Udon;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -34,6 +33,14 @@ namespace USharpVideoQueue.Runtime
 
         public void OnUSharpVideoEnd()
         {
+            Skip();
+        }
+
+        public void OnUSharpVideoError() {
+            Skip();
+        }
+
+        public void Skip() {
             dequeue(queuedVideos);
             if (!isEmpty(queuedVideos))
             {
@@ -41,7 +48,7 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        internal void playFirst() => VideoPlayer.PlayVideo(first(queuedVideos));
+        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)first(queuedVideos));
 
         /* Queue Utilities */
 
@@ -49,22 +56,22 @@ namespace USharpVideoQueue.Runtime
         // but Udon Sharp does not allow for Object instantiation at runtime,
         // Type<T> or subclasses.
 
-        internal static bool isFull(VRCUrl[] queue)
+        internal static bool isFull(System.Object[] queue)
         {
             return queue[queue.Length - 1] != null;
         }
 
-        internal static bool isEmpty(VRCUrl[] queue)
+        internal static bool isEmpty(System.Object[] queue)
         {
             return queue[0] == null;
         }
 
-        internal static VRCUrl first(VRCUrl[] queue)
+        internal static System.Object first(System.Object[] queue)
         {
             return queue[0];
         }
 
-       internal static int firstEmpty(VRCUrl[] queue)
+       internal static int firstEmpty(System.Object[] queue)
         {
             for (int i = 0; i < queue.Length; i++)
             {
@@ -73,7 +80,7 @@ namespace USharpVideoQueue.Runtime
             return -1;
         }
 
-        internal static bool enqueue(VRCUrl[] queue, VRCUrl element)
+        internal static bool enqueue(System.Object[] queue, System.Object element)
         {
             int index = firstEmpty(queue);
             if(index == -1) return false;
@@ -81,17 +88,16 @@ namespace USharpVideoQueue.Runtime
             return true;
         }
 
-        internal static void dequeue(VRCUrl[] queue)
+        internal static void dequeue(System.Object[] queue)
         {
-            //TODO: Change dequeue to be non-pure
             remove(queue, 0);
         }
 
-        internal static void remove(VRCUrl[] array, int index)
+        internal static void remove(System.Object[] queue, int index)
         {
-            array[index] = null;
-            for(int i = index; i < array.Length-1; i++) {
-                array[i] = array[i+1];
+            queue[index] = null;
+            for(int i = index; i < queue.Length-1; i++) {
+                queue[i] = queue[i+1];
             }
         }
 

@@ -63,6 +63,13 @@ namespace USharpVideoQueue.Tests.Editor
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             vpMock.Verify((vp => vp.PlayVideo(url2)), Times.Once);
         }
+        [Test]
+        public void InvalidURLQueued() {
+            var invalidURL = new VRCUrl("https://invalid.url");
+            queue.QueueVideo(invalidURL);
+            queue.SendCustomEvent("OnUSharpVideoError");
+            Assert.True(VideoQueue.isEmpty(queue.queuedVideos));
+        }
 
 
         /*
