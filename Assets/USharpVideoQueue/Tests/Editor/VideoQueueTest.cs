@@ -14,19 +14,19 @@ namespace USharpVideoQueue.Tests.Editor
     public class VideoQueueTest
     {
         private Mock<USharpVideoPlayer> vpMock;
+        private Mock<VideoQueueEventReceiver> eventReceiver;
         private VideoQueue queue;
-
-        
 
         [SetUp]
         public void Prepare()
         {
             queue = new GameObject().AddComponent<VideoQueue>();
             vpMock = new Mock<USharpVideoPlayer>();
-            queue.VideoPlayer = vpMock.Object;   
-            queue.Start();        
+            eventReceiver = new Mock<VideoQueueEventReceiver>();
+            queue.VideoPlayer = vpMock.Object;
+            queue.Start();
+            queue.RegisterCallbackReceiver(eventReceiver.Object);
         }
-
 
         [Test]
         public void CreateBehavior()
@@ -37,11 +37,11 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
-        public void CallbackRegisteredAfterStart()
+        public void CallbackRegisteredToPlayerAfterStart()
         {
             vpMock.Verify(vp => vp.RegisterCallbackReceiver(queue), Times.Once());
         }
-     
+
 
         [Test]
         public void QueueAndFinishVideo()
@@ -53,7 +53,8 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
-        public void QueueMultipleVideos() {
+        public void QueueMultipleVideos()
+        {
             var url1 = new VRCUrl("https://url.one");
             var url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url1);
@@ -64,24 +65,31 @@ namespace USharpVideoQueue.Tests.Editor
             vpMock.Verify((vp => vp.PlayVideo(url2)), Times.Once);
         }
         [Test]
-        public void InvalidURLQueued() {
+        public void InvalidURLQueued()
+        {
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
             Assert.True(VideoQueue.isEmpty(queue.queuedVideos));
         }
 
-
-        /*
-        // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-        // `yield return null;` to skip a frame.
-        [UnityTest]
-        public IEnumerator BasicTestWithEnumeratorPasses()
+        [Test]
+        public void OnQueueContentChangeEmitsEvent()
         {
-            // Use the Assert class to test conditions.
-            // Use yield to skip a frame.
-            yield return null;
+            queue.OnQueueContentChange();
+            //Make sure subscribed receiver has received event from queue
+            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Once);
         }
-        */
+
+        [Test]
+        public void ChangesToQueueEmitEvents()
+        {
+            Debug.Log(queue.registeredCallbackReceivers.Length);
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
+            queue.Skip();
+            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
+        }
     }
 }
