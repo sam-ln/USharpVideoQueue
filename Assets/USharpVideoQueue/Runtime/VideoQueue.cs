@@ -3,7 +3,6 @@ using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
-using System;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -13,7 +12,9 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
-        public VRCUrl[] queuedVideos { get; private set; }
+        [UdonSynced]
+        public VRCUrl[] queuedVideos;
+
         internal bool Initialized;
 
         internal void Start()
@@ -55,6 +56,16 @@ namespace USharpVideoQueue.Runtime
             {
                 playFirst();
             }
+        }
+
+        internal virtual void synchronizeQueueState()
+        {
+            RequestSerialization();
+        }
+
+        public override void OnDeserialization()
+        {
+
         }
 
         internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)first(queuedVideos));

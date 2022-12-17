@@ -8,6 +8,7 @@ using VRC.Udon;
 using UdonSharp;
 using UdonSharp.Video;
 using Moq;
+using USharpVideoQueue.Tests.Editor.Utils;
 
 namespace USharpVideoQueue.Tests.Editor
 {
@@ -31,7 +32,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void CreateBehavior()
         {
-            Assert.NotNull(queue);
+            Assert.False(VideoQueue.Equals(queue, null));
             Assert.True(queue.Initialized);
             Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
         }

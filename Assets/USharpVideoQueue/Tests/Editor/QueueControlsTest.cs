@@ -10,6 +10,7 @@ using UdonSharp.Video;
 using Moq;
 using UnityEngine.UI;
 using VRC.SDK3.Components;
+using USharpVideoQueue.Tests.Editor.Utils;
 
 namespace USharpVideoQueue.Tests.Editor
 {
