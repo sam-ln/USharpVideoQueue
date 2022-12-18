@@ -1,13 +1,8 @@
 ﻿
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
-using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
-using VRC.Udon;
-using UdonSharp;
-using UdonSharp.Video;
-using Moq;
+
+using static USharpVideoQueue.Runtime.QueueArrayUtils;
 
 namespace USharpVideoQueue.Tests.Editor
 {
@@ -29,25 +24,25 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void IsFull()
         {
-            Assert.True(VideoQueue.isFull(full));
-            Assert.False(VideoQueue.isFull(half));
-            Assert.False(VideoQueue.isFull(empty));
+            Assert.True(isFull(full));
+            Assert.False(isFull(half));
+            Assert.False(isFull(empty));
         }
 
         [Test]
         public void IsEmpty()
         {
-            Assert.False(VideoQueue.isEmpty(full));
-            Assert.False(VideoQueue.isEmpty(half));
-            Assert.True(VideoQueue.isEmpty(empty));
+            Assert.False(isEmpty(full));
+            Assert.False(isEmpty(half));
+            Assert.True(isEmpty(empty));
         }
 
         [Test]
         public void FirstEmpty()
         {
-            Assert.AreEqual((VideoQueue.firstEmpty(empty)), 0);
-            Assert.AreEqual((VideoQueue.firstEmpty(half)), 3);
-            Assert.AreEqual((VideoQueue.firstEmpty(full)), -1);
+            Assert.AreEqual((firstEmpty(empty)), 0);
+            Assert.AreEqual((firstEmpty(half)), 3);
+            Assert.AreEqual((firstEmpty(full)), -1);
         }
 
         [Test]
@@ -55,12 +50,12 @@ namespace USharpVideoQueue.Tests.Editor
         {
             VRCUrl add = new VRCUrl("https://url.one");
             VRCUrl[] queue = createQueue(5, 1);
-            VideoQueue.enqueue(queue, add);
+            enqueue(queue, add);
             Assert.AreEqual(queue[1], add);
-            VideoQueue.dequeue(queue);
+            dequeue(queue);
             Assert.AreEqual(queue[0], add);
-            VideoQueue.dequeue(queue);
-            Assert.True(VideoQueue.isEmpty(queue));
+            dequeue(queue);
+            Assert.True(isEmpty(queue));
         }
 
         [Test]
@@ -68,7 +63,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             VRCUrl add = new VRCUrl("https://url.one");
             VRCUrl[] queue = createQueue(1, 1);
-            Assert.False(VideoQueue.enqueue(queue, add));
+            Assert.False(enqueue(queue, add));
         }
 
         public VRCUrl[] createQueue(int size, int members)

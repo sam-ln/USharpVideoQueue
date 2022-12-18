@@ -1,11 +1,8 @@
 ﻿
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
-using VRC.Udon;
-using UdonSharp;
 using UdonSharp.Video;
 using Moq;
 using USharpVideoQueue.Tests.Editor.Utils;
@@ -71,7 +68,7 @@ namespace USharpVideoQueue.Tests.Editor
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
-            Assert.True(VideoQueue.isEmpty(queue.queuedVideos));
+            Assert.True(QueueArrayUtils.isEmpty(queue.queuedVideos));
         }
 
         [Test]
