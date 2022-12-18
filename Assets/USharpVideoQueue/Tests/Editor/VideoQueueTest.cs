@@ -68,7 +68,7 @@ namespace USharpVideoQueue.Tests.Editor
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
-            Assert.True(QueueArrayUtils.isEmpty(queue.queuedVideos));
+            Assert.True(QueueArrayUtils.IsEmpty(queue.queuedVideos));
         }
 
         [Test]

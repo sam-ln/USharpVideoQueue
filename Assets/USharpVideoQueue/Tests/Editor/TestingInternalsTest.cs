@@ -53,12 +53,12 @@ namespace USharpVideoQueue.Tests.Editor
             UdonSharpTestUtils.SimulateSerialization<VideoQueue>(queueP1, queueP2);
 
             //Check if queue 2 received queued video from queue 1
-            Assert.False(QueueArrayUtils.isEmpty(queueP2.queuedVideos));
+            Assert.False(QueueArrayUtils.IsEmpty(queueP2.queuedVideos));
             var url2 = new VRCUrl("https://url.two");
             //Check that queue 2 has a copy and not a reference
             queueP2.QueueVideo(url2);
-            Assert.AreEqual(QueueArrayUtils.firstEmpty(queueP2.queuedVideos), 2);
-            Assert.AreEqual(QueueArrayUtils.firstEmpty(queueP1.queuedVideos), 1);
+            Assert.AreEqual(QueueArrayUtils.FirstEmpty(queueP2.queuedVideos), 2);
+            Assert.AreEqual(QueueArrayUtils.FirstEmpty(queueP1.queuedVideos), 1);
         }
 
     }

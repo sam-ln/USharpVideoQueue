@@ -30,8 +30,8 @@ namespace USharpVideoQueue.Runtime
 
         public void QueueVideo(VRCUrl url)
         {
-            bool wasEmpty = isEmpty(queuedVideos);
-            enqueue(queuedVideos, url);
+            bool wasEmpty = IsEmpty(queuedVideos);
+            Enqueue(queuedVideos, url);
             OnQueueContentChange();
             if (wasEmpty) playFirst();
         }
@@ -50,9 +50,9 @@ namespace USharpVideoQueue.Runtime
 
         public void Skip()
         {
-            dequeue(queuedVideos);
+            Dequeue(queuedVideos);
             OnQueueContentChange();
-            if (!isEmpty(queuedVideos))
+            if (!IsEmpty(queuedVideos))
             {
                 playFirst();
             }
@@ -68,20 +68,13 @@ namespace USharpVideoQueue.Runtime
 
         }
 
-        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)first(queuedVideos));
+        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
 
 
         internal void OnQueueContentChange()
         {
             SendCallback(OnUSharpVideoQueueContentChangeEvent);
         }
-
-        /* Queue Utilities */
-
-        // These would preferably be object methods of a separate class Queue<T>,
-        // but Udon Sharp does not allow for Object instantiation at runtime,
-        // Type<T> or subclasses.
-
 
         /* Callback Handling */
         //Taken from MerlinVR's USharpVideoPlayer (https://github.com/MerlinVR/USharpVideo)

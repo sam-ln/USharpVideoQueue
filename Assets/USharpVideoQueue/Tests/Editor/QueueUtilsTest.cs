@@ -24,25 +24,25 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void IsFull()
         {
-            Assert.True(isFull(full));
-            Assert.False(isFull(half));
-            Assert.False(isFull(empty));
+            Assert.True(Runtime.QueueArrayUtils.IsFull(full));
+            Assert.False(Runtime.QueueArrayUtils.IsFull(half));
+            Assert.False(Runtime.QueueArrayUtils.IsFull(empty));
         }
 
         [Test]
         public void IsEmpty()
         {
-            Assert.False(isEmpty(full));
-            Assert.False(isEmpty(half));
-            Assert.True(isEmpty(empty));
+            Assert.False(Runtime.QueueArrayUtils.IsEmpty(full));
+            Assert.False(Runtime.QueueArrayUtils.IsEmpty(half));
+            Assert.True(Runtime.QueueArrayUtils.IsEmpty(empty));
         }
 
         [Test]
         public void FirstEmpty()
         {
-            Assert.AreEqual((firstEmpty(empty)), 0);
-            Assert.AreEqual((firstEmpty(half)), 3);
-            Assert.AreEqual((firstEmpty(full)), -1);
+            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(empty)), 0);
+            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(half)), 3);
+            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(full)), -1);
         }
 
         [Test]
@@ -50,12 +50,12 @@ namespace USharpVideoQueue.Tests.Editor
         {
             VRCUrl add = new VRCUrl("https://url.one");
             VRCUrl[] queue = createQueue(5, 1);
-            enqueue(queue, add);
+            Enqueue(queue, add);
             Assert.AreEqual(queue[1], add);
-            dequeue(queue);
+            Dequeue(queue);
             Assert.AreEqual(queue[0], add);
-            dequeue(queue);
-            Assert.True(isEmpty(queue));
+            Dequeue(queue);
+            Assert.True(Runtime.QueueArrayUtils.IsEmpty(queue));
         }
 
         [Test]
@@ -63,7 +63,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             VRCUrl add = new VRCUrl("https://url.one");
             VRCUrl[] queue = createQueue(1, 1);
-            Assert.False(enqueue(queue, add));
+            Assert.False(Enqueue(queue, add));
         }
 
         public VRCUrl[] createQueue(int size, int members)

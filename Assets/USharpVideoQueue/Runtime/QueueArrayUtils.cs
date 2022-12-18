@@ -4,22 +4,22 @@ namespace USharpVideoQueue.Runtime
     public static class QueueArrayUtils
     {
 
-        public static bool isFull(System.Object[] queue)
+        public static bool IsFull(System.Object[] queue)
         {
             return queue[queue.Length - 1] != null;
         }
 
-        public static bool isEmpty(System.Object[] queue)
+        public static bool IsEmpty(System.Object[] queue)
         {
             return queue[0] == null;
         }
 
-        public static System.Object first(System.Object[] queue)
+        public static System.Object First(System.Object[] queue)
         {
             return queue[0];
         }
 
-        public static int firstEmpty(System.Object[] queue)
+        public static int FirstEmpty(System.Object[] queue)
         {
             for (int i = 0; i < queue.Length; i++)
             {
@@ -28,20 +28,20 @@ namespace USharpVideoQueue.Runtime
             return -1;
         }
 
-        public static bool enqueue(System.Object[] queue, System.Object element)
+        public static bool Enqueue(System.Object[] queue, System.Object element)
         {
-            int index = firstEmpty(queue);
+            int index = FirstEmpty(queue);
             if (index == -1) return false;
             queue[index] = element;
             return true;
         }
 
-        public static void dequeue(System.Object[] queue)
+        public static void Dequeue(System.Object[] queue)
         {
-            remove(queue, 0);
+            Remove(queue, 0);
         }
 
-        public static void remove(System.Object[] queue, int index)
+        public static void Remove(System.Object[] queue, int index)
         {
             queue[index] = null;
             for (int i = index; i < queue.Length - 1; i++)
