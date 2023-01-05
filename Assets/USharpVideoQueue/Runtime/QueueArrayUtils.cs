@@ -1,52 +1,67 @@
 
+using System;
+using VRC.SDKBase;
+
 namespace USharpVideoQueue.Runtime
 {
     public static class QueueArrayUtils
     {
-
-        public static bool IsFull(System.Object[] queue)
+        public static System.Object EmptyReference(Array queue)
         {
-            return queue[queue.Length - 1] != null;
+            //Empty slots in UdonSynced arrays are not allowed to be null, thus we have
+            // to determine an "Empty" object for different types. Generics are not yet exposed to Udon.
+            //This will not run into nullpointers since all arrays must be initialized for Udon.
+            //array.GetType().GetElementType() would be preferred, but it's not exposed to Udon.
+            System.Type type = queue.GetValue(0).GetType();
+            if (type == typeof(VRCUrl)) return VRCUrl.Empty;
+            if (type == typeof(string)) return String.Empty;
+            if (type == typeof(int)) return -1;
+            return null;
         }
 
-        public static bool IsEmpty(System.Object[] queue)
+        public static bool IsFull(Array queue)
         {
-            return queue[0] == null;
+            return queue.GetValue(queue.Length - 1) != EmptyReference(queue);
         }
 
-        public static System.Object First(System.Object[] queue)
+        public static bool IsEmpty(Array queue)
         {
-            return queue[0];
+            return queue.GetValue(0) == EmptyReference(queue);
         }
 
-        public static int FirstEmpty(System.Object[] queue)
+        public static System.Object First(Array queue)
+        {
+            return queue.GetValue(0);
+        }
+
+        public static int FirstEmpty(Array queue)
         {
             for (int i = 0; i < queue.Length; i++)
             {
-                if (queue[i] == null) return i;
+                if (queue.GetValue(i) == EmptyReference(queue)) return i;
             }
             return -1;
         }
 
-        public static bool Enqueue(System.Object[] queue, System.Object element)
+        public static bool Enqueue(Array queue, System.Object element)
         {
             int index = FirstEmpty(queue);
             if (index == -1) return false;
-            queue[index] = element;
+            queue.SetValue(element, index);
             return true;
         }
 
-        public static void Dequeue(System.Object[] queue)
+        public static void Dequeue(Array queue)
         {
             Remove(queue, 0);
         }
 
-        public static void Remove(System.Object[] queue, int index)
+        public static void Remove(Array queue, int index)
         {
-            queue[index] = null;
+            queue.SetValue(EmptyReference(queue), index);
             for (int i = index; i < queue.Length - 1; i++)
             {
-                queue[i] = queue[i + 1];
+                queue.SetValue(queue.GetValue(i + 1),i);
             }
         }
 

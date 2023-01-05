@@ -2997,17 +2997,17 @@ PrefabInstance:
         type: 3}
       propertyPath: DynamicMaterials.Array.data[0]
       value: 
-      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+      objectReference: {fileID: 2100000, guid: dd37924cea904bc408bb5659e140ed22, type: 2}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[1]
       value: 
-      objectReference: {fileID: 2100000, guid: dd37924cea904bc408bb5659e140ed22, type: 2}
+      objectReference: {fileID: 2100000, guid: dc056341635f19c43912574c1c0bf2be, type: 2}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[2]
       value: 
-      objectReference: {fileID: 2100000, guid: dc056341635f19c43912574c1c0bf2be, type: 2}
+      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[3]
@@ -5743,7 +5743,7 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0
-  _syncMethod: 2
+  _syncMethod: 3
   serializedProgramAsset: {fileID: 11400000, guid: 0601789686d9f034f9fd290264a48533,
     type: 2}
   programSource: {fileID: 11400000, guid: 743dfc9f618c6be4a93a6dfc3a8ff0e0, type: 2}
@@ -10781,7 +10781,7 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0
-  _syncMethod: 2
+  _syncMethod: 1
   serializedProgramAsset: {fileID: 11400000, guid: 7e6e136e03dd5ae42a74edb664d49dff,
     type: 2}
   programSource: {fileID: 11400000, guid: 1764dd43870df5a4a9f96cd8304f6bbe, type: 2}

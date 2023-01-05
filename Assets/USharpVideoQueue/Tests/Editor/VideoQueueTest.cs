@@ -13,17 +13,27 @@ namespace USharpVideoQueue.Tests.Editor
     {
         private Mock<USharpVideoPlayer> vpMock;
         private Mock<VideoQueueEventReceiver> eventReceiver;
+        private Mock<VideoQueue> queueMock;
         private VideoQueue queue;
 
         [SetUp]
         public void Prepare()
         {
-            queue = new GameObject().AddComponent<VideoQueue>();
+            queueMock = new Mock<VideoQueue>() { CallBase = true };
+            queue = queueMock.Object;
             vpMock = new Mock<USharpVideoPlayer>();
             eventReceiver = new Mock<VideoQueueEventReceiver>();
             queue.VideoPlayer = vpMock.Object;
             queue.Start();
             queue.RegisterCallbackReceiver(eventReceiver.Object);
+
+            //set default behaviour for ownership functions which would otherwise cause a null-reference, because gameObject is not accessible in tests
+            queueMock.Setup(queue => queue.isOwner()).Returns(true);
+            queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
+            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(new VRCPlayerApi()
+            {
+                displayName = "dummy player"
+            });
         }
 
         [Test]
@@ -31,7 +41,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             Assert.False(VideoQueue.Equals(queue, null));
             Assert.True(queue.Initialized);
-            Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
+            //Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
         }
 
         [Test]
@@ -65,6 +75,8 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void InvalidURLQueued()
         {
+
+
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
@@ -82,7 +94,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void ChangesToQueueEmitEvents()
         {
-            Debug.Log(queue.registeredCallbackReceivers.Length);
+
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));

@@ -1,4 +1,5 @@
 ﻿
+using System;
 using NUnit.Framework;
 using VRC.SDKBase;
 
@@ -21,6 +22,17 @@ namespace USharpVideoQueue.Tests.Editor
             empty = createQueue(5, 0);
         }
 
+        [Test]
+        public void EmptyReferencesDetermined()
+        {
+            string[] strArr = {"string"};
+            Assert.AreEqual(EmptyReference(strArr), String.Empty);
+            int[] intArr = {1};
+            Assert.AreEqual(EmptyReference(intArr), -1);
+            VRCUrl[] urlArr = {new VRCUrl("https://url.one")};
+            Assert.AreEqual(EmptyReference(urlArr), VRCUrl.Empty);
+        }
+        
         [Test]
         public void IsFull()
         {
@@ -72,6 +84,10 @@ namespace USharpVideoQueue.Tests.Editor
             for (int i = 0; i < members; i++)
             {
                 queueArray[i] = new VRCUrl("https://www.test.com");
+            }
+            for (int j = members; j < size; j++)
+            {
+                queueArray[j] = VRCUrl.Empty;
             }
             return queueArray;
         }

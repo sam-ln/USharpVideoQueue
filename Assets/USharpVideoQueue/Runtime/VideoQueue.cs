@@ -3,6 +3,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using static USharpVideoQueue.Runtime.QueueArrayUtils;
+using System;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -14,11 +15,16 @@ namespace USharpVideoQueue.Runtime
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
         [UdonSynced]
         public VRCUrl[] queuedVideos;
+        [UdonSynced]
+        public int[] queuedByPlayer;
+        [UdonSynced]
+        public string[] queuedTitles;
 
         internal bool Initialized;
 
         internal void Start()
         {
+
             Initialized = true;
             if (registeredCallbackReceivers == null)
             {
@@ -26,36 +32,34 @@ namespace USharpVideoQueue.Runtime
             }
             VideoPlayer.RegisterCallbackReceiver(this);
             queuedVideos = new VRCUrl[MAX_QUEUE_LENGTH];
+            queuedByPlayer = new int[MAX_QUEUE_LENGTH];
+            queuedTitles = new string[MAX_QUEUE_LENGTH];
+            
+            for (int i = 0; i < MAX_QUEUE_LENGTH; i++)
+            {
+                queuedVideos[i] = VRCUrl.Empty;
+                queuedByPlayer[i] = -1;
+                queuedTitles[i] = String.Empty;
+
+            }
         }
 
         public void QueueVideo(VRCUrl url)
         {
+            ensureOwnership();
             bool wasEmpty = IsEmpty(queuedVideos);
-            Enqueue(queuedVideos, url);
+            enqueueVideoAndMeta(url, "placeholder");
             OnQueueContentChange();
+            synchronizeQueueState();
             if (wasEmpty) playFirst();
-        }
-
-        /* USharpVideoPlayer Event Callbacks */
-
-        public void OnUSharpVideoEnd()
-        {
-            Skip();
-        }
-
-        public void OnUSharpVideoError()
-        {
-            Skip();
         }
 
         public void Skip()
         {
-            Dequeue(queuedVideos);
+            ensureOwnership();
+            dequeueVideoAndMeta();
             OnQueueContentChange();
-            if (!IsEmpty(queuedVideos))
-            {
-                playFirst();
-            }
+            if (!IsEmpty(queuedVideos)) playFirst();
         }
 
         internal virtual void synchronizeQueueState()
@@ -65,15 +69,58 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnDeserialization()
         {
-
+            OnQueueContentChange();
+        }
+        
+        internal void dequeueVideoAndMeta()
+        {
+            Dequeue(queuedVideos);
+            Dequeue(queuedByPlayer);
+            Dequeue(queuedTitles);
+        }
+        
+        internal void enqueueVideoAndMeta(VRCUrl url, string title)
+        {
+            Enqueue(queuedVideos, url);
+            Enqueue(queuedByPlayer, getLocalPlayer());
+            Enqueue(queuedTitles, title);
+        }
+        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
+        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
+        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, this.gameObject);
+        internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer; 
+        internal virtual bool isVideoPlayerOwner() => Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
+        internal void ensureOwnership()
+        {
+            if (!isOwner())
+            {
+                becomeOwner();
+            }
         }
 
-        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
-
+        /* USharpVideoQueue Emitted Callbacks */
 
         internal void OnQueueContentChange()
         {
             SendCallback(OnUSharpVideoQueueContentChangeEvent);
+        }
+
+        /* USharpVideoPlayer Event Callbacks */
+
+        public void OnUSharpVideoEnd()
+        {
+            if (isVideoPlayerOwner())
+            {
+                Skip();
+            }
+        }
+
+        public void OnUSharpVideoError()
+        {
+            if (isVideoPlayerOwner())
+            {
+                Skip();
+            }
         }
 
         /* Callback Handling */
