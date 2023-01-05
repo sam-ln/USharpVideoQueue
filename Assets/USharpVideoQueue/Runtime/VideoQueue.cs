@@ -82,14 +82,11 @@ namespace USharpVideoQueue.Runtime
         internal void enqueueVideoAndMeta(VRCUrl url, string title)
         {
             Enqueue(queuedVideos, url);
-            Enqueue(queuedByPlayer, getLocalPlayer());
+            Enqueue(queuedByPlayer, getPlayerID(getLocalPlayer()));
             Enqueue(queuedTitles, title);
         }
         internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
-        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
-        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, this.gameObject);
-        internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer; 
-        internal virtual bool isVideoPlayerOwner() => Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
+       
         internal void ensureOwnership()
         {
             if (!isOwner())
@@ -97,6 +94,13 @@ namespace USharpVideoQueue.Runtime
                 becomeOwner();
             }
         }
+        
+        /* VRC SDK wrapper functions to enable mocking for tests */
+        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
+        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, this.gameObject);
+        internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
+        internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
+        internal virtual bool isVideoPlayerOwner() => Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
 
         /* USharpVideoQueue Emitted Callbacks */
 

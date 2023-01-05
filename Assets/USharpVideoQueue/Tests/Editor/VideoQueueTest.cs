@@ -1,6 +1,5 @@
 ﻿
 using NUnit.Framework;
-using UnityEngine;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using UdonSharp.Video;
@@ -11,29 +10,19 @@ namespace USharpVideoQueue.Tests.Editor
 {
     public class VideoQueueTest
     {
-        private Mock<USharpVideoPlayer> vpMock;
-        private Mock<VideoQueueEventReceiver> eventReceiver;
         private Mock<VideoQueue> queueMock;
         private VideoQueue queue;
-
+        private Mock<USharpVideoPlayer> vpMock;
+        private Mock<VideoQueueEventReceiver> eventReceiver;
+        
         [SetUp]
         public void Prepare()
         {
-            queueMock = new Mock<VideoQueue>() { CallBase = true };
-            queue = queueMock.Object;
-            vpMock = new Mock<USharpVideoPlayer>();
-            eventReceiver = new Mock<VideoQueueEventReceiver>();
-            queue.VideoPlayer = vpMock.Object;
-            queue.Start();
-            queue.RegisterCallbackReceiver(eventReceiver.Object);
-
-            //set default behaviour for ownership functions which would otherwise cause a null-reference, because gameObject is not accessible in tests
-            queueMock.Setup(queue => queue.isOwner()).Returns(true);
-            queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(new VRCPlayerApi()
-            {
-                displayName = "dummy player"
-            });
+            var mockSet = UdonSharpTestUtils.CreateDefaultVideoQueueMockSet();
+            queueMock = mockSet.VideoQueueMock;
+            queue = mockSet.VideoQueueMock.Object;
+            vpMock = mockSet.VideoPlayerMock;
+            eventReceiver = mockSet.EventReceiver;
         }
 
         [Test]

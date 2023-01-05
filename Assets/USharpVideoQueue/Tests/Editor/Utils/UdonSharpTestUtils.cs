@@ -4,7 +4,10 @@ using System.Reflection;
 using UdonSharp;
 using UnityEngine;
 using System;
+using Moq;
+using UdonSharp.Video;
 using USharpVideoQueue.Runtime;
+using VRC.SDKBase;
 
 namespace USharpVideoQueue.Tests.Editor.Utils
 {
@@ -39,6 +42,42 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             }
             target.OnDeserialization();
             source.OnPostSerialization(new VRC.Udon.Common.SerializationResult(true, 10));
+        }
+
+        public static VideoQueueMockSet CreateDefaultVideoQueueMockSet()
+        {
+            Mock<VideoQueue> queueMock = new Mock<VideoQueue>{ CallBase = true };
+            Mock<USharpVideoPlayer> vpMock = new Mock<USharpVideoPlayer>();
+            Mock<VideoQueueEventReceiver> eventReceiver = new Mock<VideoQueueEventReceiver>();
+            queueMock.Object.VideoPlayer = vpMock.Object;
+            queueMock.Object.Start();
+            queueMock.Object.RegisterCallbackReceiver(eventReceiver.Object);
+            MockDefaultSDKBehavior(queueMock);
+            return new VideoQueueMockSet
+            {
+                VideoQueueMock = queueMock,
+                VideoPlayerMock = vpMock,
+                EventReceiver = eventReceiver
+            };
+        }
+
+        public static void MockDefaultSDKBehavior(Mock<VideoQueue> queueMock)
+        {
+            queueMock.Setup(queue => queue.isOwner()).Returns(true);
+            queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
+            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(new VRCPlayerApi
+            {
+                displayName = "dummy player",
+                isLocal = true
+            });
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+        }
+
+        public class VideoQueueMockSet
+        {
+            public Mock<VideoQueue> VideoQueueMock { get; set; }
+            public Mock<USharpVideoPlayer> VideoPlayerMock { get; set; }
+            public Mock<VideoQueueEventReceiver> EventReceiver { get; set; }
         }
 
     }

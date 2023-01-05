@@ -5,7 +5,7 @@ using VRC.SDKBase;
 
 using static USharpVideoQueue.Runtime.QueueArrayUtils;
 
-namespace USharpVideoQueue.Tests.Editor
+namespace USharpVideoQueue.Tests.Editor.Utils
 {
     public class QueueUtilsTest
     {
@@ -76,6 +76,13 @@ namespace USharpVideoQueue.Tests.Editor
             VRCUrl add = new VRCUrl("https://url.one");
             VRCUrl[] queue = createQueue(1, 1);
             Assert.False(Enqueue(queue, add));
+        }
+        
+        [Test]
+        public void CountQueueElements()
+        {
+            Assert.AreEqual(Count(createQueue(5, 3)), 3);
+            Assert.AreEqual(Count(createQueue(3, 3)), 3);
         }
 
         public VRCUrl[] createQueue(int size, int members)

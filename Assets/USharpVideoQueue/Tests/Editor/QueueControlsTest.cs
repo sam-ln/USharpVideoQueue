@@ -22,13 +22,11 @@ namespace USharpVideoQueue.Tests.Editor
         [SetUp]
         public void Prepare()
         {
-            queue = new GameObject().AddComponent<VideoQueue>();
-            vpMock = new Mock<USharpVideoPlayer>();
-            eventReceiver = new Mock<VideoQueueEventReceiver>();
-            queue.VideoPlayer = vpMock.Object;
-            queue.Start();
-            queue.RegisterCallbackReceiver(eventReceiver.Object);
-
+            var mockSet = UdonSharpTestUtils.CreateDefaultVideoQueueMockSet();
+            queue = mockSet.VideoQueueMock.Object;
+            vpMock = mockSet.VideoPlayerMock;
+            eventReceiver = mockSet.EventReceiver;
+            
             controls = new GameObject().AddComponent<QueueControls>();
             uiQueueContentMock = new Mock<Text>();
             uiURLInput = new GameObject().AddComponent<VRCUrlInputField>();

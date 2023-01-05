@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 using VRC.Udon;
+using static USharpVideoQueue.Runtime.QueueArrayUtils;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -35,11 +36,11 @@ namespace USharpVideoQueue.Runtime
         internal string formatQueueContent()
         {
             string formattedUrls = "";
-            foreach (VRCUrl video in Queue.queuedVideos)
+            for (int i = 0; i < Count(Queue.queuedVideos); i++)
             {
-                if(video == null) continue;
-                formattedUrls += $"{video.Get()} \n";
+                formattedUrls += $"Player: {Queue.queuedByPlayer[i]} - {Queue.queuedVideos[i].Get()}\n";
             }
+            
             return formattedUrls;
         }
     }

@@ -10,29 +10,28 @@ namespace USharpVideoQueue.Tests.Editor
 {
     public class TestingInternalsTest
     {
-        private Mock<USharpVideoPlayer> vpMock;
-        private Mock<VideoQueueEventReceiver> eventReceiver;
-        private Mock<VideoQueue> queueMock;
 
-        private VideoQueue queue;
+        private Mock<VideoQueue> queueMock1;
+        private VideoQueue queue1;
+
+        private Mock<VideoQueue> queueMock2;
+        private VideoQueue queue2;
 
         [SetUp]
         public void Prepare()
         {
-            queueMock = new Mock<VideoQueue>() { CallBase = true };
-            //queue = new GameObject().AddComponent<VideoQueue>();
-            queue = queueMock.Object;
-            vpMock = new Mock<USharpVideoPlayer>();
-            queue.VideoPlayer = vpMock.Object;
-            queue.Start();
+            queueMock1 = UdonSharpTestUtils.CreateDefaultVideoQueueMockSet().VideoQueueMock;
+            queue1 = queueMock1.Object;
+            queueMock2 = UdonSharpTestUtils.CreateDefaultVideoQueueMockSet().VideoQueueMock;
+            queue2 = queueMock2.Object;
         }
 
         [Test]
         public void TestSerialization()
         {
             //Test if I can check for calls to RequestSerialization() though mocking
-            queue.synchronizeQueueState();
-            queueMock.Verify(queue => queue.synchronizeQueueState(), Times.Once);
+            queue1.synchronizeQueueState();
+            queueMock1.Verify(queue => queue.synchronizeQueueState(), Times.Once);
 
         }
 
@@ -40,25 +39,20 @@ namespace USharpVideoQueue.Tests.Editor
         public void TestSerializationSimulation()
         {
             //Simulate two players by creating two distinct queues. Only queue 1 has a video queued.
-            VideoQueue queueP1 = new GameObject().AddComponent<VideoQueue>();
-            queueP1.VideoPlayer = vpMock.Object;
-            queueP1.Start();
-            var url1 = new VRCUrl("https://url.one");
-            queueP1.QueueVideo(url1);
-            VideoQueue queueP2 = new GameObject().AddComponent<VideoQueue>();
-            queueP2.VideoPlayer = vpMock.Object;
-            queueP2.Start();
 
+            var url1 = new VRCUrl("https://url.one");
+            queue1.QueueVideo(url1);
+            
             //Copy contents of queue 1 to queue 2      
-            UdonSharpTestUtils.SimulateSerialization<VideoQueue>(queueP1, queueP2);
+            UdonSharpTestUtils.SimulateSerialization(queue1, queue2);
 
             //Check if queue 2 received queued video from queue 1
-            Assert.False(QueueArrayUtils.IsEmpty(queueP2.queuedVideos));
+            Assert.False(QueueArrayUtils.IsEmpty(queue2.queuedVideos));
             var url2 = new VRCUrl("https://url.two");
             //Check that queue 2 has a copy and not a reference
-            queueP2.QueueVideo(url2);
-            Assert.AreEqual(QueueArrayUtils.FirstEmpty(queueP2.queuedVideos), 2);
-            Assert.AreEqual(QueueArrayUtils.FirstEmpty(queueP1.queuedVideos), 1);
+            queue1.QueueVideo(url2);
+            Assert.AreEqual( 2, QueueArrayUtils.Count(queue1.queuedVideos));
+            Assert.AreEqual( 1, QueueArrayUtils.Count(queue2.queuedVideos));
         }
 
     }

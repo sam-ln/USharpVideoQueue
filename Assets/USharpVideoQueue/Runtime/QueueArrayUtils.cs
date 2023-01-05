@@ -43,6 +43,12 @@ namespace USharpVideoQueue.Runtime
             return -1;
         }
 
+        public static int Count(Array queue)
+        {
+            int firstEmpty = FirstEmpty(queue);
+            return firstEmpty != -1 ? firstEmpty : queue.Length;
+        }
+
         public static bool Enqueue(Array queue, System.Object element)
         {
             int index = FirstEmpty(queue);
