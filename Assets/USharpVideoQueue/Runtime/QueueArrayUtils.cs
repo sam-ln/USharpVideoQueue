@@ -38,7 +38,8 @@ namespace USharpVideoQueue.Runtime
         {
             for (int i = 0; i < queue.Length; i++)
             {
-                if (queue.GetValue(i) == EmptyReference(queue)) return i;
+                bool queueElementIsEmpty = queue.GetValue(i).Equals(EmptyReference(queue));
+                if (queueElementIsEmpty) return i;
             }
             return -1;
         }
@@ -69,6 +70,7 @@ namespace USharpVideoQueue.Runtime
             {
                 queue.SetValue(queue.GetValue(i + 1),i);
             }
+            queue.SetValue(EmptyReference(queue), queue.Length-1);
         }
 
 

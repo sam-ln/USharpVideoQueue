@@ -56,16 +56,18 @@ namespace USharpVideoQueue.Tests.Editor
             var url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url1);
             queue.QueueVideo(url2);
+            //Queued Video were serialized to other players
+            queueMock.Verify(queue => queue.synchronizeQueueState(), Times.AtLeast(2));
+            //Video Player has played first url
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             queue.SendCustomEvent("OnUSharpVideoEnd");
+            //Video Player has played the second url
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             vpMock.Verify((vp => vp.PlayVideo(url2)), Times.Once);
         }
         [Test]
         public void InvalidURLQueued()
         {
-
-
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
@@ -83,12 +85,53 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void ChangesToQueueEmitEvents()
         {
-
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
-            queue.Skip();
+            queue.Next();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
+
+        [Test]
+        public void OnPlayerLeftRemovesCurrentlyPlayingVideo()
+        {
+            
+            //enqueue as player 1
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            //enqueue as player 2
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(2);
+            var url2 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url2);
+            //player 1 leaves
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+            queue.OnPlayerLeft(new VRCPlayerApi());
+            //Only 1 video remains
+            Assert.AreEqual(1, QueueArrayUtils.Count(queue.queuedVideos));
+            //Remaining video is of player 2
+            Assert.AreEqual(url2, queue.queuedVideos[0]);
+        }
+        
+        [Test]
+        public void OnPlayerLeftRemovesLeftoverVideos()
+        {
+            
+            //enqueue as player 1
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            //enqueue as player 2
+            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(2);
+            var url2 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url2);
+            //player 2 leaves
+            queue.OnPlayerLeft(new VRCPlayerApi());
+            //Only 1 video remains
+            Assert.AreEqual(1, QueueArrayUtils.Count(queue.queuedVideos));
+            //Remaining video is of player 1
+            Assert.AreEqual(url1, queue.queuedVideos[0]);
+        }
+        
     }
 }

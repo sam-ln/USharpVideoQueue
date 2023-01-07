@@ -13,28 +13,25 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
-        [UdonSynced]
-        public VRCUrl[] queuedVideos;
-        [UdonSynced]
-        public int[] queuedByPlayer;
-        [UdonSynced]
-        public string[] queuedTitles;
+        [UdonSynced] public VRCUrl[] queuedVideos;
+        [UdonSynced] public int[] queuedByPlayer;
+        [UdonSynced] public string[] queuedTitles;
 
         internal bool Initialized;
 
         internal void Start()
         {
-
             Initialized = true;
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
             }
+
             VideoPlayer.RegisterCallbackReceiver(this);
             queuedVideos = new VRCUrl[MAX_QUEUE_LENGTH];
             queuedByPlayer = new int[MAX_QUEUE_LENGTH];
             queuedTitles = new string[MAX_QUEUE_LENGTH];
-            
+
             for (int i = 0; i < MAX_QUEUE_LENGTH; i++)
             {
                 queuedVideos[i] = VRCUrl.Empty;
@@ -45,19 +42,18 @@ namespace USharpVideoQueue.Runtime
 
         public void QueueVideo(VRCUrl url)
         {
-            ensureOwnership();
             bool wasEmpty = IsEmpty(queuedVideos);
+            ensureOwnership();
             enqueueVideoAndMeta(url, "placeholder");
-            OnQueueContentChange();
             synchronizeQueueState();
             if (wasEmpty) playFirst();
         }
 
-        public void Skip()
+        public void Next()
         {
             ensureOwnership();
             dequeueVideoAndMeta();
-            OnQueueContentChange();
+            synchronizeQueueState();
             if (!IsEmpty(queuedVideos)) playFirst();
         }
 
@@ -70,22 +66,35 @@ namespace USharpVideoQueue.Runtime
         {
             OnQueueContentChange();
         }
-        
+
         internal void dequeueVideoAndMeta()
         {
+            if (IsEmpty(queuedVideos)) return;
             Dequeue(queuedVideos);
-            Dequeue(queuedByPlayer);
             Dequeue(queuedTitles);
+            Dequeue(queuedByPlayer);
+            OnQueueContentChange();
         }
-        
+
         internal void enqueueVideoAndMeta(VRCUrl url, string title)
         {
             Enqueue(queuedVideos, url);
-            Enqueue(queuedByPlayer, getPlayerID(getLocalPlayer()));
             Enqueue(queuedTitles, title);
+            int localPlayerID = getPlayerID(getLocalPlayer());
+            Enqueue(queuedByPlayer, localPlayerID);
+            OnQueueContentChange();
         }
+
+        internal void removeVideoAndMeta(int index)
+        {
+            Remove(queuedVideos, index);
+            Remove(queuedTitles, index);
+            Remove(queuedByPlayer, index);
+            OnQueueContentChange();
+        }
+
         internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
-       
+
         internal void ensureOwnership()
         {
             if (!isOwner())
@@ -93,13 +102,40 @@ namespace USharpVideoQueue.Runtime
                 becomeOwner();
             }
         }
-        
+
         /* VRC SDK wrapper functions to enable mocking for tests */
         internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
         internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, this.gameObject);
         internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
         internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
-        internal virtual bool isVideoPlayerOwner() => Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
+
+        internal virtual bool isVideoPlayerOwner() =>
+            Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
+
+        /* VRC Runtime Events */
+
+        public override void OnPlayerLeft(VRCPlayerApi player)
+        {
+            if (!isOwner()) return;
+
+            //Remove all videos queued by player who left
+            int playerId = getPlayerID(player);
+            for (int i = Count(queuedVideos) - 1; i >= 0; i--)
+            {
+                if (queuedByPlayer[i] == playerId)
+                {
+                    //If user who left has a video currently playing,
+                    //skip it and return (because Next() calls synchronizeQueueState() as well)
+                    if (i == 0)
+                    {
+                        Next();
+                        return;
+                    }
+                    removeVideoAndMeta(i);
+                }
+            }
+            synchronizeQueueState();
+        }
 
         /* USharpVideoQueue Emitted Callbacks */
 
@@ -114,7 +150,7 @@ namespace USharpVideoQueue.Runtime
         {
             if (isVideoPlayerOwner())
             {
-                Skip();
+                Next();
             }
         }
 
@@ -122,7 +158,7 @@ namespace USharpVideoQueue.Runtime
         {
             if (isVideoPlayerOwner())
             {
-                Skip();
+                Next();
             }
         }
 
@@ -197,5 +233,4 @@ namespace USharpVideoQueue.Runtime
             }
         }
     }
-
 }

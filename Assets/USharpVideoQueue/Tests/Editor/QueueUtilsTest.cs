@@ -85,6 +85,21 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             Assert.AreEqual(Count(createQueue(3, 3)), 3);
         }
 
+        [Test]
+        public void RemoveMiddleFromFullQueue()
+        {
+            Remove(full, 3);
+            Assert.AreEqual(VRCUrl.Empty, full[full.Length - 1]);
+            Assert.AreEqual(full.Length-1, Count(full));
+        }
+        [Test]
+        public void RemoveEndFromFullQueue()
+        {
+            Remove(full, full.Length-1);
+            Assert.AreEqual(VRCUrl.Empty, full[full.Length - 1]);
+            Assert.AreEqual(full.Length-1, Count(full));
+        }
+
         public VRCUrl[] createQueue(int size, int members)
         {
             VRCUrl[] queueArray = new VRCUrl[size];
