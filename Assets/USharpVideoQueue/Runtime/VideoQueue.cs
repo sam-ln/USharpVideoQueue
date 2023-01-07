@@ -38,9 +38,8 @@ namespace USharpVideoQueue.Runtime
             for (int i = 0; i < MAX_QUEUE_LENGTH; i++)
             {
                 queuedVideos[i] = VRCUrl.Empty;
-                queuedByPlayer[i] = -1;
                 queuedTitles[i] = String.Empty;
-
+                queuedByPlayer[i] = -1;
             }
         }
 

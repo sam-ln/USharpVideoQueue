@@ -6,13 +6,13 @@ namespace USharpVideoQueue.Runtime
 {
     public static class QueueArrayUtils
     {
-        public static System.Object EmptyReference(Array queue)
+        public static object EmptyReference(Array queue)
         {
             //Empty slots in UdonSynced arrays are not allowed to be null, thus we have
             // to determine an "Empty" object for different types. Generics are not yet exposed to Udon.
             //This will not run into nullpointers since all arrays must be initialized for Udon.
             //array.GetType().GetElementType() would be preferred, but it's not exposed to Udon.
-            System.Type type = queue.GetValue(0).GetType();
+            Type type = queue.GetValue(0).GetType();
             if (type == typeof(VRCUrl)) return VRCUrl.Empty;
             if (type == typeof(string)) return String.Empty;
             if (type == typeof(int)) return -1;
@@ -29,7 +29,7 @@ namespace USharpVideoQueue.Runtime
             return queue.GetValue(0) == EmptyReference(queue);
         }
 
-        public static System.Object First(Array queue)
+        public static object First(Array queue)
         {
             return queue.GetValue(0);
         }
@@ -49,7 +49,7 @@ namespace USharpVideoQueue.Runtime
             return firstEmpty != -1 ? firstEmpty : queue.Length;
         }
 
-        public static bool Enqueue(Array queue, System.Object element)
+        public static bool Enqueue(Array queue, object element)
         {
             int index = FirstEmpty(queue);
             if (index == -1) return false;
