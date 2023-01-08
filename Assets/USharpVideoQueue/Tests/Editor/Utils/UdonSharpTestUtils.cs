@@ -24,7 +24,7 @@ namespace USharpVideoQueue.Tests.Editor.Utils
         public static void SimulateSerialization<T>(T source, T target) where T : UdonSharpBehaviour
         {
             source.OnPreSerialization();
-            foreach (FieldInfo prop in typeof(VideoQueue).GetFields())
+            foreach (FieldInfo prop in typeof(VideoQueue).GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 if (Attribute.IsDefined(prop, typeof(UdonSyncedAttribute)))
                 {

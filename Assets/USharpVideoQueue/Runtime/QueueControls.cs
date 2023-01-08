@@ -36,9 +36,9 @@ namespace USharpVideoQueue.Runtime
         internal string formatQueueContent()
         {
             string formattedUrls = "";
-            for (int i = 0; i < Count(Queue.queuedVideos); i++)
+            for (int i = 0; i < Count(Queue.QueuedVideos); i++)
             {
-                formattedUrls += $"Player: {Queue.queuedByPlayer[i]} - {Queue.queuedVideos[i].Get()}\n";
+                formattedUrls += $"Player: {Queue.QueuedByPlayer[i]} - {Queue.QueuedVideos[i].Get()}\n";
             }
             
             return formattedUrls;

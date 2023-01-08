@@ -200,7 +200,7 @@ MonoBehaviour:
       Data: 
     - Name: <IsSerialized>k__BackingField
       Entry: 5
-      Data: true
+      Data: false
     - Name: _fieldAttributes
       Entry: 7
       Data: 12|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib
@@ -230,19 +230,19 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: queuedByPlayer
+      Data: queuedTitles
     - Name: $v
       Entry: 7
       Data: 14|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: queuedByPlayer
+      Data: queuedTitles
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 15|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: System.Int32[], mscorlib
+      Data: System.String[], mscorlib
     - Name: 
       Entry: 8
       Data: 
@@ -260,7 +260,7 @@ MonoBehaviour:
       Data: 
     - Name: <IsSerialized>k__BackingField
       Entry: 5
-      Data: true
+      Data: false
     - Name: _fieldAttributes
       Entry: 7
       Data: 16|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib
@@ -290,19 +290,19 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: queuedTitles
+      Data: queuedByPlayer
     - Name: $v
       Entry: 7
       Data: 18|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: queuedTitles
+      Data: queuedByPlayer
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 19|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: System.String[], mscorlib
+      Data: System.Int32[], mscorlib
     - Name: 
       Entry: 8
       Data: 
@@ -320,7 +320,7 @@ MonoBehaviour:
       Data: 
     - Name: <IsSerialized>k__BackingField
       Entry: 5
-      Data: true
+      Data: false
     - Name: _fieldAttributes
       Entry: 7
       Data: 20|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib

@@ -13,9 +13,16 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
-        [UdonSynced] public VRCUrl[] queuedVideos;
-        [UdonSynced] public int[] queuedByPlayer;
-        [UdonSynced] public string[] queuedTitles;
+
+        [UdonSynced] private VRCUrl[] queuedVideos;
+        [UdonSynced] private string[] queuedTitles;
+        [UdonSynced] private int[] queuedByPlayer;
+        
+        //Properties can't be [UdonSynced], so they are separated
+        public VRCUrl[] QueuedVideos => queuedVideos;
+        public string[] QueuedTitles => queuedTitles;
+        public int[] QueuedByPlayer => queuedByPlayer;
+       
 
         internal bool Initialized;
 
@@ -131,9 +138,11 @@ namespace USharpVideoQueue.Runtime
                         Next();
                         return;
                     }
+
                     removeVideoAndMeta(i);
                 }
             }
+
             synchronizeQueueState();
         }
 
