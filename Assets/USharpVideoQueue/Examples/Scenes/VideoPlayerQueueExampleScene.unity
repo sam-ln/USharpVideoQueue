@@ -2997,17 +2997,17 @@ PrefabInstance:
         type: 3}
       propertyPath: DynamicMaterials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: dd37924cea904bc408bb5659e140ed22, type: 2}
+      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[1]
       value: 
-      objectReference: {fileID: 2100000, guid: dc056341635f19c43912574c1c0bf2be, type: 2}
+      objectReference: {fileID: 2100000, guid: dd37924cea904bc408bb5659e140ed22, type: 2}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[2]
       value: 
-      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+      objectReference: {fileID: 2100000, guid: dc056341635f19c43912574c1c0bf2be, type: 2}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.data[3]
@@ -5773,7 +5773,6 @@ MonoBehaviour:
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1273565378}
   VideoPlayer: {fileID: 6421412927321785731}
-  queuedVideos: []
 --- !u!4 &1273565380
 Transform:
   m_ObjectHideFlags: 0
@@ -11246,6 +11245,11 @@ PrefabInstance:
     - target: {fileID: -8833906840531973229, guid: 87d772cf1b1ec7b49839dde29eb427be,
         type: 3}
       propertyPath: playlist.Array.data[3].url
+      value: https://www.youtube.com/watch?v=rWEI9y6PElo
+      objectReference: {fileID: 0}
+    - target: {fileID: -8833906840531973229, guid: 87d772cf1b1ec7b49839dde29eb427be,
+        type: 3}
+      propertyPath: playlist.Array.data[4].url
       value: https://www.youtube.com/watch?v=rWEI9y6PElo
       objectReference: {fileID: 0}
     - target: {fileID: -8090856370922470881, guid: 87d772cf1b1ec7b49839dde29eb427be,

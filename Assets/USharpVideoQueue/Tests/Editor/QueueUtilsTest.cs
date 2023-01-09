@@ -1,9 +1,10 @@
 ﻿
 using System;
 using NUnit.Framework;
+using USharpVideoQueue.Runtime.Utility;
 using VRC.SDKBase;
 
-using static USharpVideoQueue.Runtime.QueueArrayUtils;
+using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
 namespace USharpVideoQueue.Tests.Editor.Utils
 {
@@ -36,25 +37,25 @@ namespace USharpVideoQueue.Tests.Editor.Utils
         [Test]
         public void IsFull()
         {
-            Assert.True(Runtime.QueueArrayUtils.IsFull(full));
-            Assert.False(Runtime.QueueArrayUtils.IsFull(half));
-            Assert.False(Runtime.QueueArrayUtils.IsFull(empty));
+            Assert.True(QueueArray.IsFull(full));
+            Assert.False(QueueArray.IsFull(half));
+            Assert.False(QueueArray.IsFull(empty));
         }
 
         [Test]
         public void IsEmpty()
         {
-            Assert.False(Runtime.QueueArrayUtils.IsEmpty(full));
-            Assert.False(Runtime.QueueArrayUtils.IsEmpty(half));
-            Assert.True(Runtime.QueueArrayUtils.IsEmpty(empty));
+            Assert.False(QueueArray.IsEmpty(full));
+            Assert.False(QueueArray.IsEmpty(half));
+            Assert.True(QueueArray.IsEmpty(empty));
         }
 
         [Test]
         public void FirstEmpty()
         {
-            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(empty)), 0);
-            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(half)), 3);
-            Assert.AreEqual((Runtime.QueueArrayUtils.FirstEmpty(full)), -1);
+            Assert.AreEqual((QueueArray.FirstEmpty(empty)), 0);
+            Assert.AreEqual((QueueArray.FirstEmpty(half)), 3);
+            Assert.AreEqual((QueueArray.FirstEmpty(full)), -1);
         }
 
         [Test]
@@ -67,7 +68,7 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             Dequeue(queue);
             Assert.AreEqual(queue[0], add);
             Dequeue(queue);
-            Assert.True(Runtime.QueueArrayUtils.IsEmpty(queue));
+            Assert.True(QueueArray.IsEmpty(queue));
         }
 
         [Test]

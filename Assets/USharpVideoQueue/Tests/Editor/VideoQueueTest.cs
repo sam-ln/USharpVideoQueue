@@ -4,6 +4,7 @@ using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using Moq;
+using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Editor.Utils;
 
 namespace USharpVideoQueue.Tests.Editor
@@ -71,7 +72,7 @@ namespace USharpVideoQueue.Tests.Editor
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
-            Assert.True(QueueArrayUtils.IsEmpty(queue.QueuedVideos));
+            Assert.True(QueueArray.IsEmpty(queue.QueuedVideos));
         }
 
         [Test]
@@ -108,7 +109,7 @@ namespace USharpVideoQueue.Tests.Editor
             queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
             queue.OnPlayerLeft(new VRCPlayerApi());
             //Only 1 video remains
-            Assert.AreEqual(1, QueueArrayUtils.Count(queue.QueuedVideos));
+            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
             //Remaining video is of player 2
             Assert.AreEqual(url2, queue.QueuedVideos[0]);
         }
@@ -128,7 +129,7 @@ namespace USharpVideoQueue.Tests.Editor
             //player 2 leaves
             queue.OnPlayerLeft(new VRCPlayerApi());
             //Only 1 video remains
-            Assert.AreEqual(1, QueueArrayUtils.Count(queue.QueuedVideos));
+            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
             //Remaining video is of player 1
             Assert.AreEqual(url1, queue.QueuedVideos[0]);
         }

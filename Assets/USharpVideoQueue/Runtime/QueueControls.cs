@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 using VRC.Udon;
-using static USharpVideoQueue.Runtime.QueueArrayUtils;
+using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
 namespace USharpVideoQueue.Runtime
 {

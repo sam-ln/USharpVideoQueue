@@ -2,8 +2,10 @@
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
-using static USharpVideoQueue.Runtime.QueueArrayUtils;
+using static USharpVideoQueue.Runtime.Utility.QueueArray;
 using System;
+using System.Security.Cryptography;
+using USharpVideoQueue.Runtime.Utility;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -29,6 +31,7 @@ namespace USharpVideoQueue.Runtime
         internal void Start()
         {
             Initialized = true;
+            prepareVideoPlayer();
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
@@ -45,10 +48,17 @@ namespace USharpVideoQueue.Runtime
                 queuedTitles[i] = String.Empty;
                 queuedByPlayer[i] = -1;
             }
+            
+        }
+
+        internal void prepareVideoPlayer()
+        {
+            VideoPlayer.playlist = new VRCUrl[0];
         }
 
         public void QueueVideo(VRCUrl url)
         {
+            if(url == null || !Validation.ValidateURL(url.Get())) return;
             bool wasEmpty = IsEmpty(queuedVideos);
             ensureOwnership();
             enqueueVideoAndMeta(url, "placeholder");

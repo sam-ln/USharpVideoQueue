@@ -2,9 +2,9 @@
 using System;
 using VRC.SDKBase;
 
-namespace USharpVideoQueue.Runtime
+namespace USharpVideoQueue.Runtime.Utility
 {
-    public static class QueueArrayUtils
+    public static class QueueArray
     {
         public static object EmptyReference(Array queue)
         {

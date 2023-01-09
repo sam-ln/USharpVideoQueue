@@ -4,6 +4,7 @@ using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using Moq;
+using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Editor.Utils;
 
 namespace USharpVideoQueue.Tests.Editor
@@ -47,12 +48,12 @@ namespace USharpVideoQueue.Tests.Editor
             UdonSharpTestUtils.SimulateSerialization(queue1, queue2);
 
             //Check if queue 2 received queued video from queue 1
-            Assert.False(QueueArrayUtils.IsEmpty(queue2.QueuedVideos));
+            Assert.False(QueueArray.IsEmpty(queue2.QueuedVideos));
             var url2 = new VRCUrl("https://url.two");
             //Check that queue 2 has a copy and not a reference
             queue1.QueueVideo(url2);
-            Assert.AreEqual( 2, QueueArrayUtils.Count(queue1.QueuedVideos));
-            Assert.AreEqual( 1, QueueArrayUtils.Count(queue2.QueuedVideos));
+            Assert.AreEqual( 2, QueueArray.Count(queue1.QueuedVideos));
+            Assert.AreEqual( 1, QueueArray.Count(queue2.QueuedVideos));
         }
 
     }
