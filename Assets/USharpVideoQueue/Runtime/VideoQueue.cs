@@ -31,7 +31,6 @@ namespace USharpVideoQueue.Runtime
         internal void Start()
         {
             Initialized = true;
-            prepareVideoPlayer();
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
@@ -49,11 +48,6 @@ namespace USharpVideoQueue.Runtime
                 queuedByPlayer[i] = -1;
             }
             
-        }
-
-        internal void prepareVideoPlayer()
-        {
-            VideoPlayer.playlist = new VRCUrl[0];
         }
 
         public void QueueVideo(VRCUrl url)
