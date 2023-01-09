@@ -31,6 +31,7 @@ namespace USharpVideoQueue.Runtime
             if(url != null) {
                 Queue.QueueVideo(url);
             }
+            UIURLInput.SetUrl(VRCUrl.Empty);
         }
 
         internal string formatQueueContent()
