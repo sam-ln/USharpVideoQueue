@@ -4,14 +4,15 @@ using VRC.SDKBase;
 using UdonSharp.Video;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 using System;
-using System.Security.Cryptography;
 using USharpVideoQueue.Runtime.Utility;
 
 namespace USharpVideoQueue.Runtime
 {
+    [DefaultExecutionOrder(-10)]
     public class VideoQueue : UdonSharpBehaviour
     {
-        public const int MAX_QUEUE_LENGTH = 5;
+      
+        public const int MAX_QUEUE_LENGTH = 6;
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;

@@ -1,29 +1,46 @@
 ﻿
 using UdonSharp;
 using UnityEngine;
-using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
-using VRC.Udon;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
 namespace USharpVideoQueue.Runtime
 {
+    [DefaultExecutionOrder(-1)]
     public class QueueControls : UdonSharpBehaviour
     {
 
         public VideoQueue Queue;
-        public Text UIQueueContent;
         public VRCUrlInputField UIURLInput;
+        internal UIQueueItem[] registeredQueueItems;
 
         internal void Start()
         {
             Queue.RegisterCallbackReceiver(this);
+            if (registeredQueueItems == null)
+                registeredQueueItems = new UIQueueItem[0];
         }
 
         public void OnUSharpVideoQueueContentChange()
         {
-            UIQueueContent.text = formatQueueContent();
+            UpdateQueueItems();
+        }
+
+        public void UpdateQueueItems()
+        {
+            foreach (var queueItem in registeredQueueItems)
+            {
+                if(queueItem == null) continue;
+                 queueItem.SetActive(false);
+            }
+            
+            for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Count(Queue.QueuedVideos)); i++)
+            {
+                if(registeredQueueItems[i] == null) continue;
+                registeredQueueItems[i].SetActive(true);
+                registeredQueueItems[i].SetContent(Queue.QueuedVideos[i].Get());
+            }
         }
 
         public void OnURLInput() {
@@ -34,15 +51,30 @@ namespace USharpVideoQueue.Runtime
             UIURLInput.SetUrl(VRCUrl.Empty);
         }
 
-        internal string formatQueueContent()
+        public void RegisterUIQueueItem(UIQueueItem queueItem)
         {
-            string formattedUrls = "";
-            for (int i = 0; i < Count(Queue.QueuedVideos); i++)
+            //Nullcheck with Equals for testability reasons
+            if (UIQueueItem.Equals(queueItem, null))
+                return;
+
+            if (registeredQueueItems == null)
+                registeredQueueItems = new UIQueueItem[0];
+
+            if (queueItem.Rank >= registeredQueueItems.Length-1)
             {
-                formattedUrls += $"Player: {Queue.QueuedByPlayer[i]} - {Queue.QueuedVideos[i].Get()}\n";
+                UIQueueItem[] newControlHandlers = new UIQueueItem[queueItem.Rank+1];
+
+                registeredQueueItems.CopyTo(newControlHandlers, 0);
+                registeredQueueItems = newControlHandlers;
             }
-            
-            return formattedUrls;
+
+            registeredQueueItems[queueItem.Rank] = queueItem;
+            UpdateQueueItems();
+        }
+
+        public void RemoveRank(int rank)
+        {
+           Queue.removeVideoAndMeta(rank);
         }
     }
 }
