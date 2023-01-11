@@ -6,6 +6,7 @@ using USharpVideoQueue.Runtime;
 public class UIQueueItem : UdonSharpBehaviour
 {
     public Text Description;
+    public Text QueuedBy;
     public int Rank;
     public QueueControls QueueControls;
     internal void Start()
@@ -18,9 +19,10 @@ public class UIQueueItem : UdonSharpBehaviour
         QueueControls.RemoveRank(Rank);
     }
 
-    public virtual void SetContent(string content)
+    public virtual void SetContent(string content, string queuedBy)
     {
-        Description.text = content;
+        Description.text = $"{Rank+1}: {content}";
+        QueuedBy.text = queuedBy;
     }
 
     public virtual void SetActive(bool active)

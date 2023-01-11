@@ -11,9 +11,11 @@ namespace USharpVideoQueue.Tests.Editor
 {
     public class QueueControlsTest
     {
+        private Mock<VideoQueue> queueMock;
         private VideoQueue queue;
 
         private QueueControls controls;
+        private Mock<QueueControls> controlsMock;
         private VRCUrlInputField uiURLInput;
         private Mock<UIQueueItem>[] queueItems;
 
@@ -21,9 +23,13 @@ namespace USharpVideoQueue.Tests.Editor
         public void Prepare()
         {
             var mockSet = UdonSharpTestUtils.CreateDefaultVideoQueueMockSet();
+            queueMock = mockSet.VideoQueueMock;
             queue = mockSet.VideoQueueMock.Object;
 
-            controls = new GameObject().AddComponent<QueueControls>();
+            controlsMock = new Mock<QueueControls>{CallBase = true};
+            controls = controlsMock.Object;
+            controlsMock.Setup(controls => controls.getPlayerNameByID(It.IsAny<int>())).Returns("Player Name");
+            
             uiURLInput = new GameObject().AddComponent<VRCUrlInputField>();
             controls.Queue = queue;
             controls.UIURLInput = uiURLInput;
@@ -54,9 +60,12 @@ namespace USharpVideoQueue.Tests.Editor
         {
             queueItems = createQueueItems(2, controls);
             queue.QueueVideo(new VRCUrl("https://url.one"));
-            queueItems[0].Verify(item => item.SetContent(It.IsAny<string>()), Times.Once);
+            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange"));
+            //Mocked USharpBehaviors can't receive events naturally
+            controls.SendCustomEvent("OnUSharpVideoQueueContentChange");
+            queueItems[0].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             queueItems[0].Verify(item => item.SetActive(true));
-            queueItems[1].Verify(item => item.SetContent(It.IsAny<string>()), Times.Never);
+            queueItems[1].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             queueItems[1].Verify(item => item.SetActive(false));
         }
         
@@ -81,7 +90,7 @@ namespace USharpVideoQueue.Tests.Editor
                 queueItem.Object.Rank = i;
                 queueItem.Object.QueueControls = queueControls;
                 queueItem.Object.Start();
-                queueItem.Setup(item => item.SetContent(It.IsAny<string>()));
+                queueItem.Setup(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()));
                 queueItem.Setup(item => item.SetActive(It.IsAny<bool>()));
                 queueItems[i] = queueItem;
             }

@@ -39,7 +39,9 @@ namespace USharpVideoQueue.Runtime
             {
                 if(Equals(registeredQueueItems, null)) continue;
                 registeredQueueItems[i].SetActive(true);
-                registeredQueueItems[i].SetContent(Queue.QueuedVideos[i].Get());
+                string description = Queue.QueuedTitles[i];
+                string playerName = getPlayerNameByID(Queue.QueuedByPlayer[i]);
+                registeredQueueItems[i].SetContent(description, playerName);
             }
         }
 
@@ -76,5 +78,14 @@ namespace USharpVideoQueue.Runtime
         {
            Queue.RemoveVideo(rank);
         }
+        
+        /* VRC SDK wrapper functions to enable mocking for tests */
+
+        internal virtual string getPlayerNameByID(int id)
+        {
+            VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
+            return player != null ? player.displayName : "Player not found!";
+        }
+        
     }
 }

@@ -53,10 +53,15 @@ namespace USharpVideoQueue.Runtime
 
         public void QueueVideo(VRCUrl url)
         {
+            if (url == null) return;
+            QueueVideo(url, url.Get());
+        }
+        public void QueueVideo(VRCUrl url, string title)
+        {
             if(url == null || !Validation.ValidateURL(url.Get())) return;
             bool wasEmpty = IsEmpty(queuedVideos);
             ensureOwnership();
-            enqueueVideoAndMeta(url, "placeholder");
+            enqueueVideoAndMeta(url, title);
             synchronizeQueueState();
             if (wasEmpty) playFirst();
         }
@@ -128,8 +133,8 @@ namespace USharpVideoQueue.Runtime
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */
-        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
-        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, this.gameObject);
+        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
+        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
         internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
         internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
 
@@ -237,7 +242,7 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        internal void SendCallback(string callbackName)
+        internal virtual void SendCallback(string callbackName)
         {
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
