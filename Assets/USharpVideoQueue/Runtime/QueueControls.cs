@@ -31,13 +31,13 @@ namespace USharpVideoQueue.Runtime
         {
             foreach (var queueItem in registeredQueueItems)
             {
-                if(queueItem == null) continue;
+                if(Equals(queueItem, null)) continue;
                  queueItem.SetActive(false);
             }
             
             for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Count(Queue.QueuedVideos)); i++)
             {
-                if(registeredQueueItems[i] == null) continue;
+                if(Equals(registeredQueueItems, null)) continue;
                 registeredQueueItems[i].SetActive(true);
                 registeredQueueItems[i].SetContent(Queue.QueuedVideos[i].Get());
             }
