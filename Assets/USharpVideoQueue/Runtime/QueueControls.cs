@@ -74,7 +74,7 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-           Queue.removeVideoAndMeta(rank);
+           Queue.RemoveVideo(rank);
         }
     }
 }

@@ -61,6 +61,18 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
+        public void RemoveVideo(int index)
+        {
+            if (index == 0)
+            {
+                Next();
+                return;
+            }
+            ensureOwnership();
+            removeVideoAndMeta(index);
+            synchronizeQueueState();
+        }
+
         public void Next()
         {
             ensureOwnership();
@@ -136,19 +148,9 @@ namespace USharpVideoQueue.Runtime
             {
                 if (queuedByPlayer[i] == playerId)
                 {
-                    //If user who left has a video currently playing,
-                    //skip it and return (because Next() calls synchronizeQueueState() as well)
-                    if (i == 0)
-                    {
-                        Next();
-                        return;
-                    }
-
-                    removeVideoAndMeta(i);
+                   RemoveVideo(i);
                 }
             }
-
-            synchronizeQueueState();
         }
 
         /* USharpVideoQueue Emitted Callbacks */
