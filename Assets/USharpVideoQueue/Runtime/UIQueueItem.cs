@@ -7,11 +7,13 @@ public class UIQueueItem : UdonSharpBehaviour
 {
     public Text Description;
     public Text QueuedBy;
+    public Text RankText;
     public int Rank;
     public QueueControls QueueControls;
     internal void Start()
     {
         QueueControls.RegisterUIQueueItem(this);
+        if(RankText != null) RankText.text = $"{Rank+1}";
     }
 
     public void OnRemovePressed()
@@ -21,7 +23,7 @@ public class UIQueueItem : UdonSharpBehaviour
 
     public virtual void SetContent(string content, string queuedBy)
     {
-        Description.text = $"{Rank+1}: {content}";
+        Description.text = content;
         QueuedBy.text = queuedBy;
     }
 
