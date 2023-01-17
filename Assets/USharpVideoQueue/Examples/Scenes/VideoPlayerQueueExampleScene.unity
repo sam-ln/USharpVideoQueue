@@ -2007,7 +2007,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &275908086
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4904,7 +4904,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &597528995
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -7934,7 +7934,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &1134592290
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -8365,7 +8365,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &1203234093
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11170,7 +11170,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &1655213148
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -13004,7 +13004,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Robbie Williams - Let Me Enter
+  m_Text: Video Description
 --- !u!222 &1841552949
 CanvasRenderer:
   m_ObjectHideFlags: 0
