@@ -133,6 +133,24 @@ namespace USharpVideoQueue.Tests.Editor
             //Remaining video is of player 1
             Assert.AreEqual(url1, queue.QueuedVideos[0]);
         }
+
+        [Test]
+        public void VideoPlayerIsClearedAfterLastVideoIsRemoved()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            queue.RemoveVideo(0);
+            vpMock.Verify(vp => vp.StopVideo(), Times.Once);
+        }
+        
+        [Test]
+        public void VideoPlayerIsClearedAfterLastVideoFinished()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            queue.SendCustomEvent("OnUSharpVideoEnd");
+            vpMock.Verify(vp => vp.StopVideo(), Times.Once);
+        }
         
     }
 }

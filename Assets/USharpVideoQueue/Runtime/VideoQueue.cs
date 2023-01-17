@@ -11,7 +11,6 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-10)]
     public class VideoQueue : UdonSharpBehaviour
     {
-      
         public const int MAX_QUEUE_LENGTH = 6;
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public USharpVideoPlayer VideoPlayer;
@@ -20,12 +19,12 @@ namespace USharpVideoQueue.Runtime
         [UdonSynced] private VRCUrl[] queuedVideos;
         [UdonSynced] private string[] queuedTitles;
         [UdonSynced] private int[] queuedByPlayer;
-        
+
         //Properties can't be [UdonSynced], so they are separated
         public VRCUrl[] QueuedVideos => queuedVideos;
         public string[] QueuedTitles => queuedTitles;
         public int[] QueuedByPlayer => queuedByPlayer;
-       
+
 
         internal bool Initialized;
 
@@ -48,7 +47,6 @@ namespace USharpVideoQueue.Runtime
                 queuedTitles[i] = String.Empty;
                 queuedByPlayer[i] = -1;
             }
-            
         }
 
         public void QueueVideo(VRCUrl url)
@@ -56,9 +54,10 @@ namespace USharpVideoQueue.Runtime
             if (url == null) return;
             QueueVideo(url, url.Get());
         }
+
         public void QueueVideo(VRCUrl url, string title)
         {
-            if(url == null || !Validation.ValidateURL(url.Get())) return;
+            if (url == null || !Validation.ValidateURL(url.Get())) return;
             bool wasEmpty = IsEmpty(queuedVideos);
             ensureOwnership();
             enqueueVideoAndMeta(url, title);
@@ -73,6 +72,7 @@ namespace USharpVideoQueue.Runtime
                 Next();
                 return;
             }
+
             ensureOwnership();
             removeVideoAndMeta(index);
             synchronizeQueueState();
@@ -83,7 +83,14 @@ namespace USharpVideoQueue.Runtime
             ensureOwnership();
             dequeueVideoAndMeta();
             synchronizeQueueState();
-            if (!IsEmpty(queuedVideos)) playFirst();
+            if (IsEmpty(queuedVideos))
+            {
+                clearVideoPlayer();
+            }
+            else
+            {
+                playFirst();
+            }
         }
 
         internal virtual void synchronizeQueueState()
@@ -132,6 +139,12 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
+        internal void clearVideoPlayer()
+        {
+            VideoPlayer.TakeOwnership();
+            VideoPlayer.StopVideo();
+        }
+
         /* VRC SDK wrapper functions to enable mocking for tests */
         internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
         internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
@@ -153,7 +166,7 @@ namespace USharpVideoQueue.Runtime
             {
                 if (queuedByPlayer[i] == playerId)
                 {
-                   RemoveVideo(i);
+                    RemoveVideo(i);
                 }
             }
         }
