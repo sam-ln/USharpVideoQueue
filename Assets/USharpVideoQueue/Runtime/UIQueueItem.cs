@@ -1,8 +1,10 @@
 ﻿
 using UdonSharp;
+using UnityEngine;
 using UnityEngine.UI;
 using USharpVideoQueue.Runtime;
 
+[DefaultExecutionOrder(-1)]
 public class UIQueueItem : UdonSharpBehaviour
 {
     public Text Description;

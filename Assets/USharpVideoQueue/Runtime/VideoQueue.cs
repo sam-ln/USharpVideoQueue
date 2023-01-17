@@ -5,10 +5,11 @@ using UdonSharp.Video;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 using System;
 using USharpVideoQueue.Runtime.Utility;
+using VRC.Udon.Common.Interfaces;
 
 namespace USharpVideoQueue.Runtime
 {
-    [DefaultExecutionOrder(-10)]
+    [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
         public const int MAX_QUEUE_LENGTH = 6;
@@ -26,20 +27,25 @@ namespace USharpVideoQueue.Runtime
         public int[] QueuedByPlayer => queuedByPlayer;
 
 
-        internal bool Initialized;
+        public bool Initialized = false;
 
         internal void Start()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
         {
             Initialized = true;
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
             }
-
-            VideoPlayer.RegisterCallbackReceiver(this);
+            
             queuedVideos = new VRCUrl[MAX_QUEUE_LENGTH];
             queuedByPlayer = new int[MAX_QUEUE_LENGTH];
             queuedTitles = new string[MAX_QUEUE_LENGTH];
+            VideoPlayer.RegisterCallbackReceiver(this);
 
             for (int i = 0; i < MAX_QUEUE_LENGTH; i++)
             {
@@ -80,17 +86,27 @@ namespace USharpVideoQueue.Runtime
 
         public void Next()
         {
-            ensureOwnership();
-            dequeueVideoAndMeta();
-            synchronizeQueueState();
-            if (IsEmpty(queuedVideos))
+            if(IsEmpty(queuedVideos)) return;
+            //Remove finished video
+            if (Count(queuedVideos) == 1)
             {
+                advanceQueue();
                 clearVideoPlayer();
+                return;
             }
-            else
-            {
-                playFirst();
-            }
+            
+            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(AdvanceQueueAndPlayIfVideoOwner));
+        }
+
+        public void AdvanceQueueAndPlayIfVideoOwner()
+        {
+            //Assumption: queue contains 2 or more items
+            if (Count(queuedVideos) < 2) return;
+            //Only player who queued next video should advance and play
+            if (!isNextVideoOwner()) return;
+            
+            advanceQueue();
+            playFirst();
         }
 
         internal virtual void synchronizeQueueState()
@@ -128,8 +144,17 @@ namespace USharpVideoQueue.Runtime
             Remove(queuedByPlayer, index);
             OnQueueContentChange();
         }
+        
+        
 
         internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
+
+        internal void advanceQueue()
+        {
+            ensureOwnership();
+            dequeueVideoAndMeta();
+            synchronizeQueueState();
+        }
 
         internal void ensureOwnership()
         {
@@ -144,6 +169,9 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.TakeOwnership();
             VideoPlayer.StopVideo();
         }
+
+        internal bool isNextVideoOwner() => queuedByPlayer[1] == getPlayerID(getLocalPlayer());
+       
 
         /* VRC SDK wrapper functions to enable mocking for tests */
         internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);

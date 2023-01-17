@@ -7,7 +7,7 @@ using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
 namespace USharpVideoQueue.Runtime
 {
-    [DefaultExecutionOrder(-1)]
+    [DefaultExecutionOrder(-10)]
     public class QueueControls : UdonSharpBehaviour
     {
 
@@ -29,6 +29,12 @@ namespace USharpVideoQueue.Runtime
 
         public void UpdateQueueItems()
         {
+            if (!Queue.Initialized)
+            {
+                Debug.Log("Had to initialize Queue");
+                Queue.Initialize();
+            }
+            
             foreach (var queueItem in registeredQueueItems)
             {
                 if(Equals(queueItem, null)) continue;
