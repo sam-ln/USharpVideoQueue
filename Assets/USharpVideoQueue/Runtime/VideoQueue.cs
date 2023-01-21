@@ -13,7 +13,12 @@ namespace USharpVideoQueue.Runtime
     public class VideoQueue : UdonSharpBehaviour
     {
         public int MaxQueueItems = 6;
+        
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
+        public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
+        public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
+        public const string OnUSharpVideoQueueFinalVideoEnded = "OnUSharpVideoQueueFinalVideoEnded";
+            
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
 
@@ -92,6 +97,7 @@ namespace USharpVideoQueue.Runtime
             {
                 advanceQueue();
                 clearVideoPlayer();
+                SendCallback(OnUSharpVideoQueueFinalVideoEnded, true);
                 return;
             }
 
@@ -146,7 +152,11 @@ namespace USharpVideoQueue.Runtime
         }
 
 
-        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
+        internal void playFirst()
+        {
+            VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
+            SendCallback(OnUSharpVideoQueuePlayingNextVideo, true);
+        }
 
         internal void advanceQueue()
         {
@@ -220,6 +230,7 @@ namespace USharpVideoQueue.Runtime
             if (isVideoPlayerOwner())
             {
                 Next();
+                SendCallback(OnUSharpVideoQueueSkippedError, true);
             }
         }
 
@@ -282,14 +293,20 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        internal virtual void SendCallback(string callbackName)
+        internal virtual void SendCallback(string callbackName, bool networked = false)
         {
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
                 if (!UdonSharpBehaviour.Equals(callbackName, null))
                 {
-                    Debug.Log($"Callback {callbackName} sent to receiver");
-                    callbackReceiver.SendCustomEvent(callbackName);
+                    if (networked)
+                    {
+                        callbackReceiver.SendCustomNetworkEvent(NetworkEventTarget.All, callbackName);
+                    }
+                    else
+                    {
+                        callbackReceiver.SendCustomEvent(callbackName);
+                    }
                 }
             }
         }

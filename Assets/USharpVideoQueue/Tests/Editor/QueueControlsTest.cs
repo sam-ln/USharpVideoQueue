@@ -60,7 +60,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             queueItems = createQueueItems(2, controls);
             queue.QueueVideo(new VRCUrl("https://url.one"));
-            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange"));
+            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange", false));
             //Mocked USharpBehaviors can't receive events naturally
             controls.SendCustomEvent("OnUSharpVideoQueueContentChange");
             queueItems[0].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
