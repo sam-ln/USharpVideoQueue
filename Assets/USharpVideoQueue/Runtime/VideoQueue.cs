@@ -22,15 +22,9 @@ namespace USharpVideoQueue.Runtime
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
 
-        [UdonSynced] private VRCUrl[] queuedVideos;
-        [UdonSynced] private string[] queuedTitles;
-        [UdonSynced] private int[] queuedByPlayer;
-
-        //Properties can't be [UdonSynced], so they are separated
-        public VRCUrl[] QueuedVideos => queuedVideos;
-        public string[] QueuedTitles => queuedTitles;
-        public int[] QueuedByPlayer => queuedByPlayer;
-
+        [UdonSynced] internal VRCUrl[] queuedVideos;
+        [UdonSynced] internal string[] queuedTitles;
+        [UdonSynced] internal int[] queuedByPlayer;
 
         internal bool initialized = false;
         public bool VideoPlayerIsLoading { get; private set; }
@@ -60,7 +54,7 @@ namespace USharpVideoQueue.Runtime
             for (int i = 0; i < MaxQueueItems; i++)
             {
                 queuedVideos[i] = VRCUrl.Empty;
-                queuedTitles[i] = String.Empty;
+                queuedTitles[i] = string.Empty;
                 queuedByPlayer[i] = -1;
             }
         }
@@ -120,6 +114,30 @@ namespace USharpVideoQueue.Runtime
             advanceQueue();
             playFirst();
         }
+
+        public int QueuedVideosCount()
+        {
+            return Count(queuedVideos);
+        }
+
+        public VRCUrl GetURL(int index)
+        {
+            if(index >= QueuedVideosCount()) return VRCUrl.Empty;
+            return queuedVideos[index];
+        }
+        
+        public string GetTitle(int index)
+        {
+            if(index >= QueuedVideosCount()) return string.Empty;
+            return queuedTitles[index];
+        }
+
+        public int GetQueuedByPlayer(int index)
+        {
+            if(index >= QueuedVideosCount()) return -1;
+            return queuedByPlayer[index];
+        }
+        
 
         internal virtual void synchronizeQueueState()
         {

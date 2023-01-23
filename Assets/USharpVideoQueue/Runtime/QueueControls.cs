@@ -35,12 +35,12 @@ namespace USharpVideoQueue.Runtime
                 queueItem.SetActive(false);
             }
 
-            for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Count(Queue.QueuedVideos)); i++)
+            for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Queue.QueuedVideosCount()); i++)
             {
                 if (Equals(registeredQueueItems, null)) continue;
                 registeredQueueItems[i].SetActive(true);
-                string description = Queue.QueuedTitles[i];
-                string playerName = getPlayerNameByID(Queue.QueuedByPlayer[i]);
+                string description = Queue.GetTitle(i);
+                string playerName = getPlayerNameByID(Queue.GetQueuedByPlayer(i));
                 registeredQueueItems[i].SetContent(description, playerName);
             }
         }

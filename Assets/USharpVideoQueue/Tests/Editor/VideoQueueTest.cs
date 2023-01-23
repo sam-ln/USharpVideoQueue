@@ -72,7 +72,7 @@ namespace USharpVideoQueue.Tests.Editor
             var invalidURL = new VRCUrl("https://invalid.url");
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
-            Assert.True(QueueArray.IsEmpty(queue.QueuedVideos));
+            Assert.True(QueueArray.IsEmpty(queue.queuedVideos));
         }
 
         [Test]
@@ -113,9 +113,9 @@ namespace USharpVideoQueue.Tests.Editor
             //player 1 leaves, player 2 remains
             queue.OnPlayerLeft(player1);
             //Only 1 video should remain after first video is removed
-            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
+            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             //Remaining video was queued by player 2
-            Assert.AreEqual(url2, queue.QueuedVideos[0]);
+            Assert.AreEqual(url2, queue.queuedVideos[0]);
         }
         
         [Test]
@@ -137,9 +137,9 @@ namespace USharpVideoQueue.Tests.Editor
             //player 2 leaves
             queue.OnPlayerLeft(player2);
             //Only 1 video remains
-            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
+            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             //Remaining video is of player 1
-            Assert.AreEqual(url1, queue.QueuedVideos[0]);
+            Assert.AreEqual(url1, queue.queuedVideos[0]);
         }
 
         [Test]
@@ -168,10 +168,23 @@ namespace USharpVideoQueue.Tests.Editor
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
             queue.RemoveVideo(0);
-            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
+            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
             queue.RemoveVideo(0);
-            Assert.AreEqual(0, QueueArray.Count(queue.QueuedVideos));
+            Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
+        }
+
+        [Test]
+
+        public void PublicQueueArrayAccessors()
+        {
+            int outOfBoundsNumber = 500;
+            
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            Assert.AreEqual(1, queue.QueuedVideosCount());
+            Assert.AreEqual(url1, queue.GetURL(0));
+            Assert.AreEqual(VRCUrl.Empty, queue.GetURL(outOfBoundsNumber));
         }
         
     }
