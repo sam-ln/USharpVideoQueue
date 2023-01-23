@@ -102,8 +102,7 @@ namespace USharpVideoQueue.Runtime
                 SendCallback(OnUSharpVideoQueueFinalVideoEnded, true);
                 return;
             }
-
-            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(AdvanceQueueAndPlayIfVideoOwner));
+            invokeForEveryone(nameof(AdvanceQueueAndPlayIfVideoOwner));
         }
 
         public void AdvanceQueueAndPlayIfVideoOwner()
@@ -189,6 +188,9 @@ namespace USharpVideoQueue.Runtime
         internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
         internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
         internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
+
+        internal virtual void invokeForEveryone(string function) =>
+            SendCustomNetworkEvent(NetworkEventTarget.All, function);
 
         internal virtual bool isVideoPlayerOwner() =>
             Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
