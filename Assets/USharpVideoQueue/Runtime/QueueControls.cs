@@ -1,5 +1,4 @@
-﻿
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
@@ -10,7 +9,6 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-10)]
     public class QueueControls : UdonSharpBehaviour
     {
-
         public VideoQueue Queue;
         public VRCUrlInputField UIURLInput;
         internal UIQueueItem[] registeredQueueItems;
@@ -29,21 +27,17 @@ namespace USharpVideoQueue.Runtime
 
         public void UpdateQueueItems()
         {
-            if (!Queue.Initialized)
-            {
-                Debug.Log("Had to initialize Queue");
-                Queue.Initialize();
-            }
-            
+            Queue.EnsureInitialized();
+
             foreach (var queueItem in registeredQueueItems)
             {
-                if(Equals(queueItem, null)) continue;
-                 queueItem.SetActive(false);
+                if (Equals(queueItem, null)) continue;
+                queueItem.SetActive(false);
             }
-            
+
             for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Count(Queue.QueuedVideos)); i++)
             {
-                if(Equals(registeredQueueItems, null)) continue;
+                if (Equals(registeredQueueItems, null)) continue;
                 registeredQueueItems[i].SetActive(true);
                 string description = Queue.QueuedTitles[i];
                 string playerName = getPlayerNameByID(Queue.QueuedByPlayer[i]);
@@ -51,11 +45,14 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        public void OnURLInput() {
+        public void OnURLInput()
+        {
             VRCUrl url = UIURLInput.GetUrl();
-            if(url != null) {
+            if (url != null)
+            {
                 Queue.QueueVideo(url);
             }
+
             UIURLInput.SetUrl(VRCUrl.Empty);
         }
 
@@ -68,9 +65,9 @@ namespace USharpVideoQueue.Runtime
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
 
-            if (queueItem.Rank >= registeredQueueItems.Length-1)
+            if (queueItem.Rank >= registeredQueueItems.Length - 1)
             {
-                UIQueueItem[] newControlHandlers = new UIQueueItem[queueItem.Rank+1];
+                UIQueueItem[] newControlHandlers = new UIQueueItem[queueItem.Rank + 1];
 
                 registeredQueueItems.CopyTo(newControlHandlers, 0);
                 registeredQueueItems = newControlHandlers;
@@ -82,9 +79,9 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-           Queue.RemoveVideo(rank);
+            Queue.RemoveVideo(rank);
         }
-        
+
         /* VRC SDK wrapper functions to enable mocking for tests */
 
         internal virtual string getPlayerNameByID(int id)
@@ -92,6 +89,5 @@ namespace USharpVideoQueue.Runtime
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
             return player != null ? player.displayName : "Player not found!";
         }
-        
     }
 }

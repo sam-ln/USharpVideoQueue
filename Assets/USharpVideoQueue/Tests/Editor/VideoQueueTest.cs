@@ -30,7 +30,7 @@ namespace USharpVideoQueue.Tests.Editor
         public void CreateBehavior()
         {
             Assert.False(VideoQueue.Equals(queue, null));
-            Assert.True(queue.Initialized);
+            Assert.True(queue.initialized);
             //Assert.True(VRC.SDKBase.Utilities.IsValid(queue));
         }
 

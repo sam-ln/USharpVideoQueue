@@ -32,16 +32,18 @@ namespace USharpVideoQueue.Runtime
         public int[] QueuedByPlayer => queuedByPlayer;
 
 
-        [NonSerialized] public bool Initialized = false;
+        internal bool initialized = false;
 
         internal void Start()
         {
-            Initialize();
+            EnsureInitialized();
         }
 
-        public void Initialize()
+        public void EnsureInitialized()
         {
-            Initialized = true;
+            if (initialized) return;
+            
+            initialized = true;
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
