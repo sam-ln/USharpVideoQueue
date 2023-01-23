@@ -244,7 +244,7 @@ namespace USharpVideoQueue.Runtime
 
         /* USharpVideoPlayer Event Callbacks */
 
-        public void OnUSharpVideoEnd()
+        public virtual void OnUSharpVideoEnd()
         {
             if (isVideoPlayerOwner())
             {

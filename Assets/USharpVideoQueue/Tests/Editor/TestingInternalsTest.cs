@@ -56,5 +56,13 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual( 1, QueueArray.Count(queue2.queuedVideos));
         }
 
+        [Test]
+
+        public void TestSendCustomEventSimulation()
+        {
+            UdonSharpTestUtils.SimulateSendCustomEvent(queue1, nameof(VideoQueue.OnUSharpVideoEnd));
+            queueMock1.Verify(queue => queue.OnUSharpVideoEnd(), Times.Once);
+        }
+
     }
 }
