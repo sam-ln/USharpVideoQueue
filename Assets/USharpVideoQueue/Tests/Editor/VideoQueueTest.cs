@@ -156,8 +156,22 @@ namespace USharpVideoQueue.Tests.Editor
         {
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
-            queue.SendCustomEvent("OnUSharpVideoEnd");
+            queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoEnd));
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
+        }
+
+        [Test]
+
+        public void CanOnlyRemoveFirstVideoAfterLoadingHasFinished()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
+            queue.RemoveVideo(0);
+            Assert.AreEqual(1, QueueArray.Count(queue.QueuedVideos));
+            queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
+            queue.RemoveVideo(0);
+            Assert.AreEqual(0, QueueArray.Count(queue.QueuedVideos));
         }
         
     }

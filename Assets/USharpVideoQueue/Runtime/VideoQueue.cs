@@ -33,6 +33,7 @@ namespace USharpVideoQueue.Runtime
 
 
         internal bool initialized = false;
+        public bool VideoPlayerIsLoading { get; private set; }
 
         internal void Start()
         {
@@ -44,6 +45,8 @@ namespace USharpVideoQueue.Runtime
             if (initialized) return;
             
             initialized = true;
+            VideoPlayerIsLoading = false;
+            
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
@@ -93,6 +96,8 @@ namespace USharpVideoQueue.Runtime
 
         public void Next()
         {
+            if (VideoPlayerIsLoading) return;
+
             if (IsEmpty(queuedVideos)) return;
             //Remove finished video
             if (Count(queuedVideos) == 1)
@@ -231,11 +236,22 @@ namespace USharpVideoQueue.Runtime
 
         public void OnUSharpVideoError()
         {
+            VideoPlayerIsLoading = false;
             if (isVideoPlayerOwner())
             {
                 Next();
                 SendCallback(OnUSharpVideoQueueSkippedError, true);
             }
+        }
+
+        public void OnUSharpVideoLoadStart()
+        {
+            VideoPlayerIsLoading = true;
+        }
+
+        public void OnUSharpVideoPlay()
+        {
+            VideoPlayerIsLoading = false;
         }
 
         /* Callback Handling */
