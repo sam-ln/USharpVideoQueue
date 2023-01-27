@@ -3,7 +3,6 @@ using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
-using System;
 using USharpVideoQueue.Runtime.Utility;
 using VRC.Udon.Common.Interfaces;
 
@@ -107,7 +106,7 @@ namespace USharpVideoQueue.Runtime
         public void AdvanceQueueAndPlayIfVideoOwner()
         {
             //Assumption: queue contains 2 or more items
-            if (Count(queuedVideos) < 2) return;
+            Debug.Assert(Count(queuedVideos) >= 2, "Queue contained less than 2 items!");
             //Only player who queued next video should advance and play
             if (!isNextVideoOwner()) return;
 

@@ -21,12 +21,12 @@ namespace USharpVideoQueue.Runtime.Utility
 
         public static bool IsFull(Array queue)
         {
-            return queue.GetValue(queue.Length - 1) != EmptyReference(queue);
+            return !queue.GetValue(queue.Length - 1).Equals(EmptyReference(queue));
         }
 
         public static bool IsEmpty(Array queue)
         {
-            return queue.GetValue(0) == EmptyReference(queue);
+            return queue.GetValue(0).Equals(EmptyReference(queue));
         }
 
         public static object First(Array queue)

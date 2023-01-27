@@ -143,6 +143,32 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
+
+        public void SecondPlayerCanQueueAfterFirstPlayerLeft()
+        {
+            VRCPlayerApi player1 = new VRCPlayerApi();
+            VRCPlayerApi player2 = new VRCPlayerApi();
+            queueMock.Setup(queue => queue.getPlayerID(player1)).Returns(1);
+            queueMock.Setup(queue => queue.getPlayerID(player2)).Returns(2);
+            
+            //enqueue as player 1
+            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player1);
+            var url1 = new VRCUrl("https://url.one");
+            queue.QueueVideo(url1);
+            
+            // player 1 leaves
+            queueMock.Setup(queue => queue.isOwner()).Returns(true);
+            queue.OnPlayerLeft(player1);
+            Assert.AreEqual(0, queue.QueuedVideosCount());
+            
+            //enqueue as player 2
+            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player2);
+            queue.QueueVideo(url1);
+            
+            vpMock.Verify(vp => vp.PlayVideo(url1), Times.Exactly(2));
+        }
+
+        [Test]
         public void VideoPlayerIsClearedAfterLastVideoIsRemoved()
         {
             var url1 = new VRCUrl("https://url.one");
