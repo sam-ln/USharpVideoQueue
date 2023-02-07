@@ -101,6 +101,16 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             Assert.AreEqual(full.Length-1, Count(full));
         }
 
+        [Test]
+        public void ShiftContents()
+        {
+            string[] array = { "one", "two", "three" };
+            ShiftBack(array);
+            Assert.AreEqual(string.Empty, array[0]);
+            Assert.AreEqual("one", array[1]);
+            Assert.AreEqual("two", array[2]);
+        }
+
         public VRCUrl[] createQueue(int size, int members)
         {
             VRCUrl[] queueArray = new VRCUrl[size];

@@ -73,6 +73,15 @@ namespace USharpVideoQueue.Runtime.Utility
             queue.SetValue(EmptyReference(queue), queue.Length-1);
         }
 
+        public static void ShiftBack(Array queue)
+        {
+            for (int i = queue.Length-1; i > 0; i--)
+            {
+                queue.SetValue(queue.GetValue(i-1), i);
+            }
+            queue.SetValue(EmptyReference(queue), 0);
+        }
+
 
     }
 }
