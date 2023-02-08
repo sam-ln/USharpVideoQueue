@@ -140,12 +140,16 @@ namespace UdonSharp.Video
 
         internal bool _ranInit;
 
+        internal VRCUrl _lastLoadedUrl;
+
         internal virtual void Start()
         {
             if (_ranInit)
                 return;
 
             _ranInit = true;
+            
+            _lastLoadedUrl = VRCUrl.Empty;
 
             _videoPlayerManager = GetVideoManager();
             _videoPlayerManager.Start();
@@ -275,6 +279,7 @@ namespace UdonSharp.Video
                 SetPausedInternal(_ownerPaused, false);
                 SyncVideo();
                 LogMessage($"Started video: {_syncedURL}");
+                EnsureCorrectUrlLoaded();
             }
 
             SetStatusText("");
@@ -674,10 +679,30 @@ namespace UdonSharp.Video
             SetStatusText("Loading video...");
             ResetVideoLoad();
             _loadingVideo = true;
+            _lastLoadedUrl = url;
             _videoPlayerManager.LoadURL(url);
 
             AddUIUrlHistory(url);
         }
+
+        /// <summary>
+        /// Reloads the video if the loaded URL doesn't match the URL synced by the owner.
+        /// This is needed in rare cases when the video is loaded before _syncedUrl finished syncing.
+        /// </summary>
+        private void EnsureCorrectUrlLoaded()
+        {
+            if (!_lastLoadedUrl.Get().Equals(_syncedURL.Get()))
+            {
+                LogWarning("URL Sync Check failed! Reloading video..");
+                Reload();
+            }
+            else
+            {
+                LogMessage("URL Sync Check passed!");
+            }
+        }
+
+        
 
         internal virtual void SetPausedInternal(bool paused, bool updatePauseTime)
         {
