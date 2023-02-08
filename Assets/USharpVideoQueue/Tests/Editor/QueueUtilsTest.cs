@@ -6,7 +6,7 @@ using VRC.SDKBase;
 
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
-namespace USharpVideoQueue.Tests.Editor.Utils
+namespace USharpVideoQueue.Tests.Editor
 {
     public class QueueUtilsTest
     {

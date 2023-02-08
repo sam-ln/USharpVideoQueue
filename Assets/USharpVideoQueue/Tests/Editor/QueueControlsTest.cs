@@ -2,8 +2,8 @@ using NUnit.Framework;
 using UnityEngine;
 using USharpVideoQueue.Runtime;
 using Moq;
+using USharpVideoQueue.Tests.Editor.TestUtils;
 using VRC.SDK3.Components;
-using USharpVideoQueue.Tests.Editor.Utils;
 using VRC.SDKBase;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
@@ -60,7 +60,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             queueItems = createQueueItems(2, controls);
             queue.QueueVideo(new VRCUrl("https://url.one"));
-            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange", false));
+            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange"));
             //Mocked USharpBehaviors can't receive events naturally
             controls.SendCustomEvent("OnUSharpVideoQueueContentChange");
             queueItems[0].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Once);

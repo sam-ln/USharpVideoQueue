@@ -1,15 +1,13 @@
-using NUnit.Framework;
-using UnityEngine;
-using USharpVideoQueue.Runtime;
-using VRC.SDKBase;
-using UdonSharp.Video;
 using Moq;
+using NUnit.Framework;
+using USharpVideoQueue.Runtime;
 using USharpVideoQueue.Runtime.Utility;
-using USharpVideoQueue.Tests.Editor.Utils;
+using USharpVideoQueue.Tests.Editor.TestUtils;
+using VRC.SDKBase;
 
-namespace USharpVideoQueue.Tests.Editor
+namespace USharpVideoQueue.Tests.Editor.TestUtilsTest
 {
-    public class TestingInternalsTest
+    public class MockingTest
     {
 
         private Mock<VideoQueue> queueMock1;
@@ -31,8 +29,8 @@ namespace USharpVideoQueue.Tests.Editor
         public void TestSerialization()
         {
             //Test if I can check for calls to RequestSerialization() though mocking
-            queue1.synchronizeQueueState();
-            queueMock1.Verify(queue => queue.synchronizeQueueState(), Times.Once);
+            queue1.synchronizeData();
+            queueMock1.Verify(queue => queue.synchronizeData(), Times.Once);
 
         }
 
@@ -57,12 +55,10 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
-
         public void TestSendCustomEventSimulation()
         {
             UdonSharpTestUtils.SimulateSendCustomEvent(queue1, nameof(VideoQueue.OnUSharpVideoEnd));
             queueMock1.Verify(queue => queue.OnUSharpVideoEnd(), Times.Once);
         }
-
     }
 }

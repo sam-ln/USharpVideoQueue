@@ -1,15 +1,13 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.Reflection;
-using UdonSharp;
-using UnityEngine;
-using System;
 using Moq;
+using UdonSharp;
 using UdonSharp.Video;
+using UnityEngine;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 
-namespace USharpVideoQueue.Tests.Editor.Utils
+namespace USharpVideoQueue.Tests.Editor.TestUtils
 {
     public static class UdonSharpTestUtils
     {
@@ -58,12 +56,12 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             methodInfo.Invoke(target, null);
         }
 
-        public static VideoQueueMockSet CreateDefaultVideoQueueMockSet()
+        public static VideoQueueMockSet CreateDefaultVideoQueueMockSet(int playerId = 1)
         {
             Mock<VideoQueue> queueMock = new Mock<VideoQueue> { CallBase = true };
             Mock<USharpVideoPlayer> vpMock = new Mock<USharpVideoPlayer>();
             Mock<VideoQueueEventReceiver> eventReceiver = new Mock<VideoQueueEventReceiver>();
-            MockDefaultSDKBehavior(queueMock);
+            MockDummySDKBehavior(queueMock);
             queueMock.Object.VideoPlayer = vpMock.Object;
             queueMock.Object.RegisterCallbackReceiver(eventReceiver.Object);
             VideoQueueMockSet mockSet = new VideoQueueMockSet
@@ -71,25 +69,25 @@ namespace USharpVideoQueue.Tests.Editor.Utils
                 VideoQueueMock = queueMock,
                 VideoPlayerMock = vpMock,
                 EventReceiver = eventReceiver,
-                Player = new VRCPlayerApi(),
+                PlayerId = playerId,
+                Player = new VRCPlayerApi
+                {
+                    displayName = $"Player{playerId}"
+                },
                 ServerTime = 0
             };
             mockSet.VideoQueueMock.Setup(queue => queue.getCurrentServerTime()).Returns(() => ++mockSet.ServerTime);
+            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(mockSet.Player);
+            queueMock.Setup(queue => queue.getPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
             queueMock.Object.Start();
             return mockSet;
         }
 
-        public static void MockDefaultSDKBehavior(Mock<VideoQueue> queueMock)
+        public static void MockDummySDKBehavior(Mock<VideoQueue> queueMock)
         {
             queueMock.Setup(queue => queue.isOwner()).Returns(true);
             queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(new VRCPlayerApi
-            {
-                displayName = "dummy player",
-                isLocal = true
-            });
             queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
-            queueMock.Setup(queue => queue.getCurrentServerTime()).Returns(200);
         }
 
         public class VideoQueueMockSet
@@ -99,6 +97,74 @@ namespace USharpVideoQueue.Tests.Editor.Utils
             public Mock<VideoQueueEventReceiver> EventReceiver { get; set; }
             public VRCPlayerApi Player { get; set; }
             public int ServerTime { get; set; }
+            public int PlayerId { get; set; }
+        }
+
+        public class VideoQueueMockGroup
+        {
+            public VideoQueueMockSet[] MockSets { get; set; }
+            public VideoQueueMockSet Owner;
+            public int ServerTime;
+
+            public VideoQueueMockGroup(int count)
+            {
+                MockSets = new VideoQueueMockSet[count];
+                for (int i = 0; i < count; i++)
+                {
+                    MockSets[i] = CreateDefaultVideoQueueMockSet(i);
+                }
+
+                Owner = MockSets[0];
+                ServerTime = 10;
+                SetupMocks();
+            }
+
+            public void SerializeGroup(VideoQueueMockSet source)
+            {
+                if (source != Owner) return;
+                ServerTime += 10;
+                foreach (var mockSet in MockSets)
+                {
+                    if(mockSet == source) continue;
+                    SimulateSerialization(source.VideoQueueMock.Object, mockSet.VideoQueueMock.Object);
+                }
+            }
+
+            public void SimulateSendCustomNetworkEvent(string eventName)
+            {
+                foreach (var mockSet in MockSets)
+                {
+                    SimulateSendCustomEvent(mockSet.VideoQueueMock.Object, eventName);
+                }
+            }
+
+            public void SetupMocks()
+            {
+                foreach (var mockSet in MockSets)
+                {
+                    mockSet.VideoQueueMock.Setup((queue => queue.synchronizeData()))
+                        .Callback(() =>
+                        {
+                            SerializeGroup(mockSet);
+                        });
+
+                    mockSet.VideoQueueMock.Setup(queue => queue.isOwner()).Returns(() => mockSet == Owner);
+                    mockSet.VideoQueueMock.Setup(queue => queue.becomeOwner()).Callback(() => Owner = mockSet);
+                    mockSet.VideoQueueMock.Setup(queue => queue.getCurrentServerTime()).Returns(() => ServerTime);
+                    mockSet.VideoQueueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(
+                        (VRCPlayerApi player) => GetMockedPlayerId(player));
+                }
+            }
+
+            public int GetMockedPlayerId(VRCPlayerApi player)
+            {
+                foreach (var mockSet in MockSets)
+                {
+                    if (mockSet.Player.Equals(player)) return mockSet.PlayerId;
+                }
+
+                return -1;
+            }
         }
     }
 }

@@ -4,11 +4,11 @@ using VRC.SDKBase;
 using UdonSharp.Video;
 using Moq;
 using USharpVideoQueue.Runtime.Utility;
-using USharpVideoQueue.Tests.Editor.Utils;
+using USharpVideoQueue.Tests.Editor.TestUtils;
 
 namespace USharpVideoQueue.Tests.Editor
 {
-    public class VideoQueueTest
+    public class VideoQueueLocalTest
     {
         private Mock<VideoQueue> queueMock;
         private VideoQueue queue;
@@ -57,7 +57,7 @@ namespace USharpVideoQueue.Tests.Editor
             queue.QueueVideo(url1);
             queue.QueueVideo(url2);
             //Queued Video were serialized to other players
-            queueMock.Verify(queue => queue.synchronizeQueueState(), Times.AtLeast(2));
+            queueMock.Verify(queue => queue.synchronizeData(), Times.AtLeast(2));
             //Video Player has played first url
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             queue.SendCustomEvent("OnUSharpVideoEnd");
@@ -92,80 +92,7 @@ namespace USharpVideoQueue.Tests.Editor
             queue.Next();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
-
-        [Test]
-        public void OnPlayerLeftRemovesCurrentlyPlayingVideo()
-        {
-            VRCPlayerApi player1 = new VRCPlayerApi();
-            VRCPlayerApi player2 = new VRCPlayerApi();
-            queueMock.Setup(queue => queue.getPlayerID(player1)).Returns(1);
-            queueMock.Setup(queue => queue.getPlayerID(player2)).Returns(2);
-
-            //enqueue as player 1
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player1);
-            var url1 = new VRCUrl("https://url.one");
-            queue.QueueVideo(url1);
-            //enqueue as player 2
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player2);
-            var url2 = new VRCUrl("https://url.one");
-            queue.QueueVideo(url2);
-            //player 1 leaves, player 2 remains
-            queue.OnPlayerLeft(player1);
-            //Only 1 video should remain after first video is removed
-            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
-            //Remaining video was queued by player 2
-            Assert.AreEqual(url2, queue.queuedVideos[0]);
-        }
-
-        [Test]
-        public void OnPlayerLeftRemovesLeftoverVideos()
-        {
-            VRCPlayerApi player1 = new VRCPlayerApi();
-            VRCPlayerApi player2 = new VRCPlayerApi();
-            queueMock.Setup(queue => queue.getPlayerID(player1)).Returns(1);
-            queueMock.Setup(queue => queue.getPlayerID(player2)).Returns(2);
-
-            //enqueue as player 1
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player1);
-            var url1 = new VRCUrl("https://url.one");
-            queue.QueueVideo(url1);
-            //enqueue as player 2
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player2);
-            var url2 = new VRCUrl("https://url.one");
-            queue.QueueVideo(url2);
-            //player 2 leaves
-            queue.OnPlayerLeft(player2);
-            //Only 1 video remains
-            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
-            //Remaining video is of player 1
-            Assert.AreEqual(url1, queue.queuedVideos[0]);
-        }
-
-        [Test]
-        public void SecondPlayerCanQueueAfterFirstPlayerLeft()
-        {
-            VRCPlayerApi player1 = new VRCPlayerApi();
-            VRCPlayerApi player2 = new VRCPlayerApi();
-            queueMock.Setup(queue => queue.getPlayerID(player1)).Returns(1);
-            queueMock.Setup(queue => queue.getPlayerID(player2)).Returns(2);
-
-            //enqueue as player 1
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player1);
-            var url1 = new VRCUrl("https://url.one");
-            queue.QueueVideo(url1);
-
-            // player 1 leaves
-            queueMock.Setup(queue => queue.isOwner()).Returns(true);
-            queue.OnPlayerLeft(player1);
-            Assert.AreEqual(0, queue.QueuedVideosCount());
-
-            //enqueue as player 2
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(player2);
-            queue.QueueVideo(url1);
-
-            vpMock.Verify(vp => vp.PlayVideo(url1), Times.Exactly(2));
-        }
-
+        
         [Test]
         public void VideoPlayerIsClearedAfterLastVideoIsRemoved()
         {
