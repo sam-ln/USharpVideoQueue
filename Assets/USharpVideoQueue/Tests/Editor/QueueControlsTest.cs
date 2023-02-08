@@ -60,7 +60,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             queueItems = createQueueItems(2, controls);
             queue.QueueVideo(new VRCUrl("https://url.one"));
-            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange"));
+            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange", false));
             //Mocked USharpBehaviors can't receive events naturally
             controls.SendCustomEvent("OnUSharpVideoQueueContentChange");
             queueItems[0].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -78,7 +78,7 @@ namespace USharpVideoQueue.Tests.Editor
             VRCUrl url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url2);
             queueItems[0].Object.OnRemovePressed();
-            Assert.AreEqual(1, Count(queue.QueuedVideos));
+            Assert.AreEqual(1, Count(queue.queuedVideos));
         }
 
         private Mock<UIQueueItem>[] createQueueItems(int count, QueueControls queueControls)

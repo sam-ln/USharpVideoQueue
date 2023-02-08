@@ -1,9 +1,9 @@
-﻿using UdonSharp;
+﻿using System;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
-using System;
 using USharpVideoQueue.Runtime.Utility;
 using VRC.Udon.Common.Interfaces;
 
@@ -12,45 +12,62 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
-        public const int MAX_QUEUE_LENGTH = 6;
+        public int MaxQueueItems = 6;
+        public bool EnableDebug = false;
+        
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
+        public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
+        public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
+        public const string OnUSharpVideoQueueFinalVideoEnded = "OnUSharpVideoQueueFinalVideoEnded";
+            
         public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
 
-        [UdonSynced] private VRCUrl[] queuedVideos;
-        [UdonSynced] private string[] queuedTitles;
-        [UdonSynced] private int[] queuedByPlayer;
+        [UdonSynced] internal VRCUrl[] queuedVideos;
+        [UdonSynced] internal string[] queuedTitles;
+        [UdonSynced] internal int[] queuedByPlayer;
 
-        //Properties can't be [UdonSynced], so they are separated
-        public VRCUrl[] QueuedVideos => queuedVideos;
-        public string[] QueuedTitles => queuedTitles;
-        public int[] QueuedByPlayer => queuedByPlayer;
+        internal int dataCriticalEventSize = 3;
+        [UdonSynced] internal string[] dataCriticalEvents;
+        internal int mostRecentEventTimestamp;
 
-
-        public bool Initialized = false;
+        internal bool initialized = false;
+        public bool VideoPlayerIsLoading { get; private set; }
 
         internal void Start()
         {
-            Initialize();
+            EnsureInitialized();
         }
 
-        public void Initialize()
+        public void EnsureInitialized()
         {
-            Initialized = true;
+            if (initialized) return;
+            
+            initialized = true;
+            VideoPlayerIsLoading = false;
+            mostRecentEventTimestamp = getCurrentServerTime();
+            
             if (registeredCallbackReceivers == null)
             {
                 registeredCallbackReceivers = new UdonSharpBehaviour[0];
             }
+
+            dataCriticalEvents = new string[dataCriticalEventSize];
             
-            queuedVideos = new VRCUrl[MAX_QUEUE_LENGTH];
-            queuedByPlayer = new int[MAX_QUEUE_LENGTH];
-            queuedTitles = new string[MAX_QUEUE_LENGTH];
+            for (int i = 0; i < dataCriticalEventSize; i++)
+            {
+                dataCriticalEvents[i] = string.Empty;
+            }
+            
+            queuedVideos = new VRCUrl[MaxQueueItems];
+            queuedByPlayer = new int[MaxQueueItems];
+            queuedTitles = new string[MaxQueueItems];
             VideoPlayer.RegisterCallbackReceiver(this);
 
-            for (int i = 0; i < MAX_QUEUE_LENGTH; i++)
+            for (int i = 0; i < MaxQueueItems; i++)
             {
                 queuedVideos[i] = VRCUrl.Empty;
-                queuedTitles[i] = String.Empty;
+                queuedTitles[i] = string.Empty;
                 queuedByPlayer[i] = -1;
             }
         }
@@ -86,37 +103,70 @@ namespace USharpVideoQueue.Runtime
 
         public void Next()
         {
-            if(IsEmpty(queuedVideos)) return;
-            //Remove finished video
-            if (Count(queuedVideos) == 1)
+            if (VideoPlayerIsLoading) return;
+
+            if (IsEmpty(queuedVideos)) return;
+
+            ensureOwnership();
+            dequeueVideoAndMeta();
+            if (IsEmpty(queuedVideos))
             {
-                advanceQueue();
                 clearVideoPlayer();
-                return;
+                SendCallback(OnUSharpVideoQueueFinalVideoEnded, true);
             }
-            
-            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(AdvanceQueueAndPlayIfVideoOwner));
+            else
+            {
+                QueueDataCriticalFunctionEvent(nameof(PlayFirstIfVideoOwner)); 
+            }
+            synchronizeQueueState();
         }
 
-        public void AdvanceQueueAndPlayIfVideoOwner()
+        public void PlayFirstIfVideoOwner()
         {
-            //Assumption: queue contains 2 or more items
-            if (Count(queuedVideos) < 2) return;
-            //Only player who queued next video should advance and play
-            if (!isNextVideoOwner()) return;
-            
-            advanceQueue();
+            if (!isFirstVideoOwner()) return;
             playFirst();
         }
 
+        public int QueuedVideosCount()
+        {
+            return Count(queuedVideos);
+        }
+
+        public VRCUrl GetURL(int index)
+        {
+            if(index >= QueuedVideosCount()) return VRCUrl.Empty;
+            return queuedVideos[index];
+        }
+        
+        public string GetTitle(int index)
+        {
+            if(index >= QueuedVideosCount()) return string.Empty;
+            return queuedTitles[index];
+        }
+
+        public int GetQueuedByPlayer(int index)
+        {
+            if(index >= QueuedVideosCount()) return -1;
+            return queuedByPlayer[index];
+        }
+        
+
         internal virtual void synchronizeQueueState()
         {
+            InvokePendingEvents();
             RequestSerialization();
         }
 
         public override void OnDeserialization()
         {
+            LogDebug("OnDeserialization run!");
+            InvokePendingEvents();
             OnQueueContentChange();
+        }
+
+        public override void OnPreSerialization()
+        {
+           LogDebug("Sending Serialized Data!");
         }
 
         internal void dequeueVideoAndMeta()
@@ -144,16 +194,12 @@ namespace USharpVideoQueue.Runtime
             Remove(queuedByPlayer, index);
             OnQueueContentChange();
         }
-        
-        
 
-        internal void playFirst() => VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
 
-        internal void advanceQueue()
+        internal void playFirst()
         {
-            ensureOwnership();
-            dequeueVideoAndMeta();
-            synchronizeQueueState();
+            VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
+            SendCallback(OnUSharpVideoQueuePlayingNextVideo, true);
         }
 
         internal void ensureOwnership()
@@ -170,8 +216,13 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.StopVideo();
         }
 
-        internal bool isNextVideoOwner() => queuedByPlayer[1] == getPlayerID(getLocalPlayer());
-       
+        internal void LogDebug(string message)
+        {
+            if(EnableDebug) Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
+        } 
+
+        internal bool isFirstVideoOwner() => queuedByPlayer[0] == getPlayerID(getLocalPlayer());
+
 
         /* VRC SDK wrapper functions to enable mocking for tests */
         internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
@@ -181,6 +232,8 @@ namespace USharpVideoQueue.Runtime
 
         internal virtual bool isVideoPlayerOwner() =>
             Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
+
+        internal virtual int getCurrentServerTime() => Networking.GetServerTimeInMilliseconds();
 
         /* VRC Runtime Events */
 
@@ -208,8 +261,9 @@ namespace USharpVideoQueue.Runtime
 
         /* USharpVideoPlayer Event Callbacks */
 
-        public void OnUSharpVideoEnd()
+        public virtual void OnUSharpVideoEnd()
         {
+            LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
             {
                 Next();
@@ -218,10 +272,23 @@ namespace USharpVideoQueue.Runtime
 
         public void OnUSharpVideoError()
         {
+            LogDebug($"Received USharpVideoError! Is player Video Player owner? {isVideoPlayerOwner()}");
+            VideoPlayerIsLoading = false;
             if (isVideoPlayerOwner())
             {
                 Next();
+                SendCallback(OnUSharpVideoQueueSkippedError, true);
             }
+        }
+
+        public void OnUSharpVideoLoadStart()
+        {
+            VideoPlayerIsLoading = true;
+        }
+
+        public void OnUSharpVideoPlay()
+        {
+            VideoPlayerIsLoading = false;
         }
 
         /* Callback Handling */
@@ -283,14 +350,72 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        internal virtual void SendCallback(string callbackName)
+        internal virtual void SendCallback(string callbackName, bool networked = false)
         {
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
                 if (!UdonSharpBehaviour.Equals(callbackName, null))
                 {
-                    Debug.Log($"Callback {callbackName} sent to receiver");
-                    callbackReceiver.SendCustomEvent(callbackName);
+                    if (networked)
+                    {
+                        callbackReceiver.SendCustomNetworkEvent(NetworkEventTarget.All, callbackName);
+                    }
+                    else
+                    {
+                        callbackReceiver.SendCustomEvent(callbackName);
+                    }
+                }
+            }
+        }
+
+        internal virtual void QueueDataCriticalFunctionEvent(string functionName)
+        {
+            AddDataCriticalEvent("function", functionName, getCurrentServerTime().ToString());
+        }
+        
+        internal virtual void QueueDataCriticalCallbackEvent(string callbackName)
+        {
+            AddDataCriticalEvent("callback", callbackName, getCurrentServerTime().ToString());
+        }
+
+        internal virtual void AddDataCriticalEvent(string type, string value, string timestamp)
+        {
+            Debug.Assert(isOwner());
+            ShiftBack(dataCriticalEvents);
+            string formattedEvent =  $"{type}:{value}:{timestamp}";
+            dataCriticalEvents[0] = formattedEvent;
+            LogDebug($"Queued Data Critical Function Event with content '{formattedEvent}'");
+        }
+
+        internal virtual void InvokePendingEvents()
+        {
+            for (int i = Count(dataCriticalEvents) - 1; i >= 0; i--)
+            {
+                string[] splitEvent = dataCriticalEvents[i].Split(':');
+
+                string type = splitEvent[0];
+                string value = splitEvent[1];
+                int timestamp = int.Parse(splitEvent[2]);
+                
+                if (timestamp > mostRecentEventTimestamp)
+                {
+
+                    LogDebug($"Received DataCriticalEvent {value} with timestamp {timestamp}. " +
+                             $"Most recent received event had timestamp {mostRecentEventTimestamp}");
+                    mostRecentEventTimestamp = timestamp;
+                    if (type == "function")
+                    {
+                        SendCustomEvent(value);
+                    }
+                    else if (type == "callback")
+                    {
+                        SendCallback(value);
+                    }
+                    
+                }
+                else
+                {
+                    LogDebug($"Disregarded DataCritical event {value}, because timestamp '{timestamp}'\n occured before most recent event '{mostRecentEventTimestamp}");
                 }
             }
         }

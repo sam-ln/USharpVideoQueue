@@ -21,12 +21,12 @@ namespace USharpVideoQueue.Runtime.Utility
 
         public static bool IsFull(Array queue)
         {
-            return queue.GetValue(queue.Length - 1) != EmptyReference(queue);
+            return !queue.GetValue(queue.Length - 1).Equals(EmptyReference(queue));
         }
 
         public static bool IsEmpty(Array queue)
         {
-            return queue.GetValue(0) == EmptyReference(queue);
+            return queue.GetValue(0).Equals(EmptyReference(queue));
         }
 
         public static object First(Array queue)
@@ -71,6 +71,15 @@ namespace USharpVideoQueue.Runtime.Utility
                 queue.SetValue(queue.GetValue(i + 1),i);
             }
             queue.SetValue(EmptyReference(queue), queue.Length-1);
+        }
+
+        public static void ShiftBack(Array queue)
+        {
+            for (int i = queue.Length-1; i > 0; i--)
+            {
+                queue.SetValue(queue.GetValue(i-1), i);
+            }
+            queue.SetValue(EmptyReference(queue), 0);
         }
 
 
