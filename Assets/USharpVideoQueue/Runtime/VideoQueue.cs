@@ -1,4 +1,5 @@
-﻿using UdonSharp;
+﻿using System.Collections.Generic;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
@@ -30,6 +31,10 @@ namespace USharpVideoQueue.Runtime
         internal int eventTimestampThreshold;
 
         internal bool initialized = false;
+
+        internal readonly string FunctionEventIdentifier = "func";
+        internal readonly string CallbackEventIdentifier = "call";
+        
         public bool VideoPlayerIsLoading { get; private set; }
 
         internal void Start()
@@ -371,12 +376,12 @@ namespace USharpVideoQueue.Runtime
 
         internal virtual void QueueFunctionEvent(string functionName)
         {
-            AddDataCriticalEvent("function", functionName, getCurrentServerTime().ToString());
+            AddDataCriticalEvent(FunctionEventIdentifier, functionName, getCurrentServerTime().ToString());
         }
 
         internal virtual void QueueCallbackEvent(string callbackName)
         {
-            AddDataCriticalEvent("callback", callbackName, getCurrentServerTime().ToString());
+            AddDataCriticalEvent(CallbackEventIdentifier, callbackName, getCurrentServerTime().ToString());
         }
 
         internal virtual void AddDataCriticalEvent(string type, string value, string timestamp)
@@ -404,11 +409,11 @@ namespace USharpVideoQueue.Runtime
                     LogDebug($"Received DataCriticalEvent {value} with timestamp {timestamp}. " +
                              $"Most recent received event had timestamp {eventTimestampThreshold}");
                     latestEventTimestamp = timestamp;
-                    if (type == "function")
+                    if (type == FunctionEventIdentifier)
                     {
                         SendCustomEvent(value);
                     }
-                    else if (type == "callback")
+                    else if (type == CallbackEventIdentifier)
                     {
                         SendCallback(value);
                     }
