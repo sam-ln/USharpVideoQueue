@@ -6,6 +6,7 @@ using UdonSharp.Video;
 using UnityEngine;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
+using System.Collections.Generic;
 
 namespace USharpVideoQueue.Tests.Editor.TestUtils
 {
@@ -102,16 +103,16 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
 
         public class VideoQueueMockGroup
         {
-            public VideoQueueMockSet[] MockSets { get; set; }
+            public List<VideoQueueMockSet> MockSets { get; set; }
             public VideoQueueMockSet Owner;
             public int ServerTime;
 
             public VideoQueueMockGroup(int count)
             {
-                MockSets = new VideoQueueMockSet[count];
+                MockSets = new List<VideoQueueMockSet>();
                 for (int i = 0; i < count; i++)
                 {
-                    MockSets[i] = CreateDefaultVideoQueueMockSet(i);
+                    MockSets.Add(CreateDefaultVideoQueueMockSet(i));
                 }
 
                 Owner = MockSets[0];
