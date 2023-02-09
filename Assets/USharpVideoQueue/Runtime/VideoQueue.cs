@@ -86,11 +86,12 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
-        public void RemoveVideo(int index)
+        public void RemoveVideo(int index, bool skipChecks = false)
         {
             if (index == 0)
             {
-                Next();
+                if (skipChecks) skipToNextVideo();
+                else RequestNext();
                 return;
             }
 
@@ -99,10 +100,14 @@ namespace USharpVideoQueue.Runtime
             invokeEventsAndSynchronize();
         }
 
-        public void Next()
+        public void RequestNext()
         {
             if (VideoPlayerIsLoading) return;
+            skipToNextVideo();
+        }
 
+        internal void skipToNextVideo()
+        {
             if (IsEmpty(queuedVideos)) return;
 
             ensureOwnership();
@@ -249,7 +254,7 @@ namespace USharpVideoQueue.Runtime
             {
                 if (queuedByPlayer[i] == playerId)
                 {
-                    RemoveVideo(i);
+                    RemoveVideo(i, skipChecks: true);
                 }
             }
         }
@@ -268,7 +273,7 @@ namespace USharpVideoQueue.Runtime
             LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
             {
-                Next();
+                skipToNextVideo();
             }
         }
 
@@ -279,7 +284,7 @@ namespace USharpVideoQueue.Runtime
             if (isVideoPlayerOwner())
             {
                 QueueCallbackEvent(OnUSharpVideoQueueSkippedError);
-                Next();
+                skipToNextVideo();
             }
         }
 

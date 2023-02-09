@@ -103,12 +103,16 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
 
         public class VideoQueueMockGroup
         {
+
+            public readonly string USharpVideoObjectName = "USharpVideo";
             public List<VideoQueueMockSet> MockSets { get; set; }
             public VideoQueueMockSet Owner;
             public int ServerTime;
+            public Dictionary<string, VideoQueueMockSet> ObjectOwners;
 
             public VideoQueueMockGroup(int count)
             {
+                ObjectOwners = new Dictionary<string, VideoQueueMockSet>();
                 MockSets = new List<VideoQueueMockSet>();
                 for (int i = 0; i < count; i++)
                 {
@@ -116,6 +120,7 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                 }
 
                 Owner = MockSets[0];
+                ObjectOwners[USharpVideoObjectName] = MockSets[0];
                 ServerTime = 10;
                 SetupMocks();
             }
@@ -154,6 +159,10 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                     mockSet.VideoQueueMock.Setup(queue => queue.getCurrentServerTime()).Returns(() => ServerTime);
                     mockSet.VideoQueueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(
                         (VRCPlayerApi player) => GetMockedPlayerId(player));
+                    mockSet.VideoQueueMock.Setup(queue => queue.isVideoPlayerOwner())
+                        .Returns(() => ObjectOwners[USharpVideoObjectName].Equals(mockSet));
+                    mockSet.VideoPlayerMock.Setup(player => player.PlayVideo(It.IsAny<VRCUrl>()))
+                        .Callback(() => ObjectOwners[USharpVideoObjectName] = mockSet);
                 }
             }
 

@@ -106,7 +106,7 @@ namespace USharpVideoQueue.Tests.Editor
         }
 
         [Test]
-        public void MultiplePlayersFillQueueAndWatchUntilItsEmpty([Range(1, 6)] int playerCount)
+        public void MultiplePlayersFillQueueAndWatchUntilItsEmpty([Range(1,6)] int playerCount)
         {
             UdonSharpTestUtils.VideoQueueMockGroup mockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(playerCount);
             List<VRCUrl> testUrls = new List<VRCUrl>();
@@ -128,11 +128,14 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.True(mockGroup.MockSets.TrueForAll(set =>
                 set.VideoQueueMock.Object.QueuedVideosCount() == playerCount));
             
+            // All videos are queued at this point, now starting to dequeue videos after they have been watched
+            
             //simulate initial video has ended
-            mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoEnd());
+            mockGroup.MockSets[0].VideoQueueMock.Object.OnUSharpVideoEnd();
             int expectedRemainingVideos = playerCount - 1;
             for (int i = 1; i < playerCount; i++)
             {
+                
                 //assert that all players have the expected amount of remaining videos in queue
                 Assert.True(mockGroup.MockSets.TrueForAll(set =>
                     set.VideoQueueMock.Object.QueuedVideosCount() == expectedRemainingVideos));
@@ -146,12 +149,20 @@ namespace USharpVideoQueue.Tests.Editor
                 mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
                 
                 //simulate this video has ended
-                mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoEnd());
+                mockGroup.MockSets[i].VideoQueueMock.Object.OnUSharpVideoEnd();
             }
             
             //assert that every queue is empty now
             Assert.True(mockGroup.MockSets.TrueForAll(set =>
                 set.VideoQueueMock.Object.QueuedVideosCount() == 0));
+            
+            //assert that no player has played a video they haven't queued
+            for (int i = 0; i < playerCount; i++)
+            {
+                mockGroup.MockSets[i].VideoPlayerMock
+                    .Verify(player => player.PlayVideo(It.IsAny<VRCUrl>()), Times.Once());
+            }
+            
         }
     }
 }

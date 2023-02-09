@@ -91,7 +91,7 @@ namespace USharpVideoQueue.Tests.Editor
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
-            queue.Next();
+            queue.RequestNext();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
         
