@@ -12,6 +12,8 @@ namespace USharpVideoQueue.Tests.Editor
         private UdonSharpTestUtils.VideoQueueMockGroup MockGroup;
         private VideoQueue queue0;
         private VideoQueue queue1;
+        private VRCUrl url0;
+        private VRCUrl url1;
 
         [SetUp]
         public void Prepare()
@@ -19,21 +21,22 @@ namespace USharpVideoQueue.Tests.Editor
             MockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(2);
             queue0 = MockGroup.MockSets[0].VideoQueueMock.Object;
             queue1 = MockGroup.MockSets[1].VideoQueueMock.Object;
+            url0 = new VRCUrl("https://url.zero");
+            url1 = new VRCUrl("https://url.one");
         }
 
         [Test]
         public void OnPlayerLeftRemovesCurrentlyPlayingVideo()
         {
-            var url0 = new VRCUrl("https://url.zero");
+            // player 0 queues a video
             queue0.QueueVideo(url0);
-            //enqueue as player 1
-            var url1 = new VRCUrl("https://url.one");
+            // player 1 queues a video
             queue1.QueueVideo(url1);
             //player 0 leaves, player 1 remains
             queue1.OnPlayerLeft(MockGroup.MockSets[0].Player);
             //Only 1 video should remain after first video is removed
             Assert.AreEqual(1, QueueArray.Count(queue1.queuedVideos));
-            //Remaining video was queued by player 1
+            //Remaining video should be the one queued by player 1
             Assert.AreEqual(url1, queue1.queuedVideos[0]);
         }
 
@@ -41,10 +44,8 @@ namespace USharpVideoQueue.Tests.Editor
         public void OnPlayerLeftRemovesLeftoverVideos()
         {
             //enqueue as player 0
-            var url0 = new VRCUrl("https://url.zero");
             queue0.QueueVideo(url0);
             //enqueue as player 1
-            var url1 = new VRCUrl("https://url.one");
             queue1.QueueVideo(url1);
             //player 1 leaves
             queue0.becomeOwner();
@@ -58,7 +59,6 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void SecondPlayerCanQueueAfterFirstPlayerLeft()
         {
-            var url0 = new VRCUrl("https://url.zero");
             queue0.QueueVideo(url0);
 
             //player 0 leaves

@@ -123,6 +123,7 @@ namespace USharpVideoQueue.Runtime
 
         public void PlayFirstIfVideoOwner()
         {
+            VideoPlayerIsLoading = true;
             if (!isFirstVideoOwner()) return;
             playFirst();
         }

@@ -55,6 +55,7 @@ namespace USharpVideoQueue.Tests.Editor
             var url1 = new VRCUrl("https://url.one");
             var url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url1);
+            queue.OnUSharpVideoPlay();
             queue.QueueVideo(url2);
             //Queued Video were serialized to other players
             queueMock.Verify(queue => queue.synchronizeData(), Times.AtLeast(2));
@@ -88,6 +89,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
+            queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
             queue.Next();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
@@ -98,6 +100,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
+            queue.OnUSharpVideoPlay();
             queue.RemoveVideo(0);
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
@@ -107,7 +110,8 @@ namespace USharpVideoQueue.Tests.Editor
         {
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
-            queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoEnd));
+            queue.OnUSharpVideoPlay();
+            queue.OnUSharpVideoEnd();
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
 

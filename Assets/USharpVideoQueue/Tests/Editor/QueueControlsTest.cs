@@ -75,6 +75,7 @@ namespace USharpVideoQueue.Tests.Editor
             queueItems = createQueueItems(2, controls);
             VRCUrl url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
+            queue.OnUSharpVideoPlay();
             VRCUrl url2 = new VRCUrl("https://url.two");
             queue.QueueVideo(url2);
             queueItems[0].Object.OnRemovePressed();
