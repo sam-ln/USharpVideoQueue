@@ -139,5 +139,35 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(url1, queue.GetURL(0));
             Assert.AreEqual(VRCUrl.Empty, queue.GetURL(outOfBoundsNumber));
         }
+
+        [Test]
+        public void CallbacksAreEmitted()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            //queue first video
+            queue.QueueVideo(url1);
+            //first video starts playing
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoPlay();
+            //queue second video
+            queue.QueueVideo(url1);
+            //queue third video
+            queue.QueueVideo(url1);
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueContentChange(), Times.AtLeast(3));
+            //first video has ended
+            queue.OnUSharpVideoEnd();
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueuePlayingNextVideo(), Times.Once);
+            //second video starts loading
+            queue.OnUSharpVideoLoadStart();
+            //loading failed
+            queue.OnUSharpVideoError();
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError());
+            //third video starts playing
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoPlay();
+            //third video has ended
+            queue.OnUSharpVideoEnd();
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded());
+        }
     }
 }
