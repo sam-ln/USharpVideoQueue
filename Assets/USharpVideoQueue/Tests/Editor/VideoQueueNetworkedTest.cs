@@ -164,5 +164,31 @@ namespace USharpVideoQueue.Tests.Editor
             }
             
         }
+        
+        [Test]
+        public void LotsOfAlternatingNetworkedQueueingAndRemoving()
+        {
+            int iterations = 100;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                queue0.QueueVideo(url0);
+                queue0.OnUSharpVideoLoadStart();
+                queue0.OnUSharpVideoPlay();
+                Assert.AreEqual(1, queue0.QueuedVideosCount());
+                Assert.AreEqual(1, queue1.QueuedVideosCount());
+                queue0.RemoveVideo(0);
+                Assert.AreEqual(0, queue0.QueuedVideosCount());
+                Assert.AreEqual(0, queue1.QueuedVideosCount());
+                queue1.QueueVideo(url1);
+                Assert.AreEqual(1, queue0.QueuedVideosCount());
+                Assert.AreEqual(1, queue1.QueuedVideosCount());
+                queue1.OnUSharpVideoLoadStart();
+                queue1.OnUSharpVideoPlay();
+                queue1.RemoveVideo(0);
+                Assert.AreEqual(0, queue0.QueuedVideosCount());
+                Assert.AreEqual(0, queue1.QueuedVideosCount());
+            }
+        }
     }
 }

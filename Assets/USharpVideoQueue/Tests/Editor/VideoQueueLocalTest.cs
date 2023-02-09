@@ -169,5 +169,23 @@ namespace USharpVideoQueue.Tests.Editor
             queue.OnUSharpVideoEnd();
             eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded());
         }
+
+        [Test]
+
+        public void LotsOfQueueingAndRemoving()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            int iterations = 100;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                queue.QueueVideo(url1);
+                Assert.AreEqual(1, queue.QueuedVideosCount());
+                queue.OnUSharpVideoLoadStart();
+                queue.OnUSharpVideoPlay();
+                queue.RemoveVideo(0);
+                Assert.AreEqual(0, queue.QueuedVideosCount());
+            }
+        }
     }
 }
