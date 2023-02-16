@@ -12,9 +12,18 @@ namespace USharpVideoQueue.Runtime
         public VideoQueue Queue;
         public VRCUrlInputField UIURLInput;
         internal UIQueueItem[] registeredQueueItems;
+        internal bool initialized = false;
 
         internal void Start()
         {
+            EnsureInitialized();
+        }
+
+        public void EnsureInitialized()
+        {
+            if (initialized) return;
+            initialized = true;
+            
             Queue.RegisterCallbackReceiver(this);
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
@@ -42,6 +51,7 @@ namespace USharpVideoQueue.Runtime
                 string description = Queue.GetTitle(i);
                 string playerName = getPlayerNameByID(Queue.GetQueuedByPlayer(i));
                 registeredQueueItems[i].SetContent(description, playerName);
+                registeredQueueItems[i].SetRemoveEnabled(Queue.IsPlayerPermittedToRemoveVideo(i));
             }
         }
 
@@ -79,7 +89,7 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-            Queue.RemoveVideo(rank);
+            Queue.RequestRemoveVideo(rank);
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */

@@ -10,6 +10,7 @@ public class UIQueueItem : UdonSharpBehaviour
     public Text Description;
     public Text QueuedBy;
     public Text RankText;
+    public Button RemoveButton;
     public int Rank;
     public QueueControls QueueControls;
     internal void Start()
@@ -32,5 +33,10 @@ public class UIQueueItem : UdonSharpBehaviour
     public virtual void SetActive(bool active)
     {
         gameObject.SetActive(active);
+    }
+
+    public virtual void SetRemoveEnabled(bool enabled)
+    {
+        RemoveButton.gameObject.SetActive(enabled);
     }
 }

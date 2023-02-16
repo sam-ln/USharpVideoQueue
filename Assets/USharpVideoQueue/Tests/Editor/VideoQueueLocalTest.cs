@@ -101,7 +101,7 @@ namespace USharpVideoQueue.Tests.Editor
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
-            queue.RemoveVideo(0);
+            queue.RequestRemoveVideo(0);
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
 
@@ -121,10 +121,10 @@ namespace USharpVideoQueue.Tests.Editor
             var url1 = new VRCUrl("https://url.one");
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
-            queue.RemoveVideo(0);
+            queue.RequestRemoveVideo(0);
             Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
-            queue.RemoveVideo(0);
+            queue.RequestRemoveVideo(0);
             Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
         }
 
@@ -183,9 +183,15 @@ namespace USharpVideoQueue.Tests.Editor
                 Assert.AreEqual(1, queue.QueuedVideosCount());
                 queue.OnUSharpVideoLoadStart();
                 queue.OnUSharpVideoPlay();
-                queue.RemoveVideo(0);
+                queue.RequestRemoveVideo(0);
                 Assert.AreEqual(0, queue.QueuedVideosCount());
             }
+        }
+
+        public void DequeueOrRemoveNotExistingVideo()
+        {
+            queue.RequestNext();
+            queue.RequestRemoveVideo(0);
         }
     }
 }

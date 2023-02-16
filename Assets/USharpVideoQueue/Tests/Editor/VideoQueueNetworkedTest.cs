@@ -80,39 +80,42 @@ namespace USharpVideoQueue.Tests.Editor
         {
             queue0.QueueVideo(url0);
             queue0.OnUSharpVideoLoadStart();
-            queue0.RemoveVideo(0);
+            queue0.RequestRemoveVideo(0);
             // video was not removed because it is still loading
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             // video player signals loading is finished
             queue0.OnUSharpVideoLoadStart();
             queue0.OnUSharpVideoPlay();
 
-            queue0.RemoveVideo(0);
+            queue0.RequestRemoveVideo(0);
             // video can now be removed
             Assert.AreEqual(0, queue0.QueuedVideosCount());
         }
 
         [Test]
-        public void FirstVideoCanBeRemovedAfterError()
+        public void FirstVideoIsRemovedAfterFailedManualRemovalAndPlayerError()
         {
             queue0.QueueVideo(url0);
-            // video was not removed because it is still loading
-            // video player signals error
             queue0.OnUSharpVideoLoadStart();
+            queue0.RequestRemoveVideo(0);
+            // video was not removed because it is still loading
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            // video player signals error
+            
             queue0.OnUSharpVideoError();
-            queue0.RemoveVideo(0);
+            
             // video was removed
             Assert.AreEqual(0, queue0.QueuedVideosCount());
         }
 
         [Test]
-        public void MultiplePlayersFillQueueAndWatchUntilItsEmpty([Range(1,6)] int playerCount)
+        public void MultiplePlayersFillQueueAndWatchUntilItsEmpty([Range(1, 6)] int playerCount)
         {
             UdonSharpTestUtils.VideoQueueMockGroup mockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(playerCount);
             List<VRCUrl> testUrls = new List<VRCUrl>();
             VRCUrl initialURL = new VRCUrl("https://initial.url");
             testUrls.Add(initialURL);
-            
+
             mockGroup.MockSets[0].VideoQueueMock.Object.QueueVideo(initialURL);
             //simulate playing initial video
             mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
@@ -127,44 +130,44 @@ namespace USharpVideoQueue.Tests.Editor
             //All players have synchronized all videos
             Assert.True(mockGroup.MockSets.TrueForAll(set =>
                 set.VideoQueueMock.Object.QueuedVideosCount() == playerCount));
-            
+
             // All videos are queued at this point, now starting to dequeue videos after they have been watched
-            
+
             //simulate initial video has ended
             mockGroup.MockSets[0].VideoQueueMock.Object.OnUSharpVideoEnd();
             int expectedRemainingVideos = playerCount - 1;
             for (int i = 1; i < playerCount; i++)
             {
-                
+
                 //assert that all players have the expected amount of remaining videos in queue
                 Assert.True(mockGroup.MockSets.TrueForAll(set =>
                     set.VideoQueueMock.Object.QueuedVideosCount() == expectedRemainingVideos));
                 expectedRemainingVideos--;
-                
+
                 //verify that this player played the video that they queued
                 mockGroup.MockSets[i].VideoPlayerMock.Verify(player => player.PlayVideo(testUrls[i]), Times.Once);
-                
+
                 //simulate new video has started
                 mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
                 mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
-                
+
                 //simulate this video has ended
                 mockGroup.MockSets[i].VideoQueueMock.Object.OnUSharpVideoEnd();
             }
-            
+
             //assert that every queue is empty now
             Assert.True(mockGroup.MockSets.TrueForAll(set =>
                 set.VideoQueueMock.Object.QueuedVideosCount() == 0));
-            
+
             //assert that no player has played a video they haven't queued
             for (int i = 0; i < playerCount; i++)
             {
                 mockGroup.MockSets[i].VideoPlayerMock
                     .Verify(player => player.PlayVideo(It.IsAny<VRCUrl>()), Times.Once());
             }
-            
+
         }
-        
+
         [Test]
         public void LotsOfAlternatingNetworkedQueueingAndRemoving()
         {
@@ -177,7 +180,7 @@ namespace USharpVideoQueue.Tests.Editor
                 queue0.OnUSharpVideoPlay();
                 Assert.AreEqual(1, queue0.QueuedVideosCount());
                 Assert.AreEqual(1, queue1.QueuedVideosCount());
-                queue0.RemoveVideo(0);
+                queue0.RequestRemoveVideo(0);
                 Assert.AreEqual(0, queue0.QueuedVideosCount());
                 Assert.AreEqual(0, queue1.QueuedVideosCount());
                 queue1.QueueVideo(url1);
@@ -185,10 +188,69 @@ namespace USharpVideoQueue.Tests.Editor
                 Assert.AreEqual(1, queue1.QueuedVideosCount());
                 queue1.OnUSharpVideoLoadStart();
                 queue1.OnUSharpVideoPlay();
-                queue1.RemoveVideo(0);
+                queue1.RequestRemoveVideo(0);
                 Assert.AreEqual(0, queue0.QueuedVideosCount());
                 Assert.AreEqual(0, queue1.QueuedVideosCount());
             }
         }
+
+        [Test]
+        public void CanOnlyRemoveFirstVideoOfOthersAfterLoadingHasFinished()
+        {
+            //make player 1 master of the session
+            MockGroup.Master = MockGroup.MockSets[1];
+
+            queue0.QueueVideo(url0);
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
+            queue0.QueueVideo(url1);
+            queue1.RequestRemoveVideo(0);
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            queue1.RequestRemoveVideo(0);
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
+            queue1.RequestRemoveVideo(0);
+            Assert.AreEqual(0, queue0.QueuedVideosCount());
+            Assert.AreEqual(0, queue1.QueuedVideosCount());
+        }
+
+        [Test]
+        public void VideoErrorOnNonOwnerDoesNotAdvanceQueue()
+        {
+            queue0.QueueVideo(url0);
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
+            //Non-owner experiences error
+            queue1.OnUSharpVideoError();
+            //Video should not be removed
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            
+        }
+
+        [Test]
+        public void NonMasterCanOnlyRemoveOwnVideos()
+        {
+            queue0.QueueVideo(url0);
+            queue0.QueueVideo(url1);
+            queue1.QueueVideo(url1);
+            Assert.AreEqual(3, queue0.QueuedVideosCount());
+            Assert.AreEqual(3, queue1.QueuedVideosCount());
+            //player 1 tries to remove video from player 0
+            queue1.RequestRemoveVideo(1);
+            //no video was removed because player 1 does not have permission to remove video from player 0
+            Assert.AreEqual(3, queue0.QueuedVideosCount());
+            Assert.AreEqual(3, queue1.QueuedVideosCount());
+            
+            //player 1 tries to remove video from player 1
+            queue1.RequestRemoveVideo(2);
+            
+            Assert.AreEqual(2, queue0.QueuedVideosCount());
+            Assert.AreEqual(2, queue1.QueuedVideosCount());
+        }
+        
     }
 }
