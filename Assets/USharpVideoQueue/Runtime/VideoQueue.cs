@@ -185,6 +185,7 @@ namespace USharpVideoQueue.Runtime
 
         internal void invokeEventsAndSynchronize()
         {
+            Debug.Assert(isOwner());
             invokePendingEvents();
             synchronizeData();
         }
@@ -408,7 +409,6 @@ namespace USharpVideoQueue.Runtime
 
         internal virtual void AddDataCriticalEvent(string type, string value, string timestamp)
         {
-            Debug.Assert(isOwner());
             ShiftBack(dataCriticalEvents);
             string formattedEvent = $"{type}:{value}:{timestamp}";
             dataCriticalEvents[0] = formattedEvent;

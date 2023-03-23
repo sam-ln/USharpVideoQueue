@@ -230,6 +230,24 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(1, queue1.QueuedVideosCount());
             
         }
+        
+        [Test]
+        public void VideoErrorAdvancesQueueWhenVideoPlayerOwnerIsNotQueueOwner()
+        {
+            queue0.QueueVideo(url0);
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
+            queue1.QueueVideo(url1);
+            //Video Player Owner is not longer Queue Owner
+            //Only Video Player Owner experiences video player error
+            queue1.OnUSharpVideoPlay();
+            queue0.OnUSharpVideoError();
+            
+            //Video should be removed
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            
+        }
+        
 
         [Test]
         public void NonMasterCanOnlyRemoveOwnVideos()
