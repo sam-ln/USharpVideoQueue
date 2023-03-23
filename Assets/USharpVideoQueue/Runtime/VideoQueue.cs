@@ -135,9 +135,9 @@ namespace USharpVideoQueue.Runtime
 
             ensureOwnership();
             removeVideoData(0);
+            clearVideoPlayer();
             if (IsEmpty(queuedVideos))
             {
-                clearVideoPlayer();
                 QueueCallbackEvent(OnUSharpVideoQueueFinalVideoEnded);
             }
             else
