@@ -89,6 +89,8 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
             queueMock.Setup(queue => queue.isOwner()).Returns(true);
             queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
             queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+            queueMock.Setup(queue => queue.SendCustomEventDelayedSeconds(It.IsAny<String>(), It.IsAny<int>()))
+                .Callback((string name, int seconds) => SimulateSendCustomEvent(queueMock.Object, name));
         }
 
         public class VideoQueueMockSet

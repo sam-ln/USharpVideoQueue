@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
@@ -12,11 +11,13 @@ namespace USharpVideoQueue.Runtime
     public class VideoQueue : UdonSharpBehaviour
     {
         public int MaxQueueItems = 6;
+        public int PauseSecondsBetweenVideos = 5;
         public bool EnableDebug = false;
 
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
         public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
+        public const string OnUSharpVideoQueueVideoEnded = "OnUSharpVideoQueueVideoEnded";
         public const string OnUSharpVideoQueueFinalVideoEnded = "OnUSharpVideoQueueFinalVideoEnded";
 
         public USharpVideoPlayer VideoPlayer;
@@ -35,7 +36,7 @@ namespace USharpVideoQueue.Runtime
 
         internal readonly string FunctionEventIdentifier = "func";
         internal readonly string CallbackEventIdentifier = "call";
-        
+
         public bool VideoPlayerIsLoading { get; private set; }
 
         internal void Start()
@@ -92,13 +93,13 @@ namespace USharpVideoQueue.Runtime
             invokeEventsAndSynchronize();
             if (wasEmpty) playFirst();
         }
-        
+
 
         public void RequestRemoveVideo(int index)
         {
             //Check if user is allowed to remove video
             if (!IsPlayerPermittedToRemoveVideo(index)) return;
-            
+
             if (index == 0)
             {
                 RequestNext();
@@ -115,11 +116,12 @@ namespace USharpVideoQueue.Runtime
                 skipToNextVideo();
                 return;
             }
+
             ensureOwnership();
             removeVideoData(index);
             invokeEventsAndSynchronize();
         }
-        
+
 
         public void RequestNext()
         {
@@ -140,11 +142,16 @@ namespace USharpVideoQueue.Runtime
             }
             else
             {
-                QueueCallbackEvent(OnUSharpVideoQueuePlayingNextVideo);
-                QueueFunctionEvent(nameof(PlayFirstIfVideoOwner));
+                QueueCallbackEvent(OnUSharpVideoQueueVideoEnded);
+                QueueFunctionEvent(nameof(PlayFirstAfterPauseIfVideoOwner));
             }
 
             invokeEventsAndSynchronize();
+        }
+
+        public void PlayFirstAfterPauseIfVideoOwner()
+        {
+            SendCustomEventDelayedSeconds(nameof(PlayFirstIfVideoOwner), PauseSecondsBetweenVideos);
         }
 
         public void PlayFirstIfVideoOwner()
@@ -213,7 +220,7 @@ namespace USharpVideoQueue.Runtime
         internal void removeVideoData(int index)
         {
             if (index >= QueuedVideosCount()) return;
-            
+
             Remove(queuedVideos, index);
             Remove(queuedTitles, index);
             Remove(queuedByPlayer, index);
@@ -244,13 +251,14 @@ namespace USharpVideoQueue.Runtime
         {
             return isMaster();
         }
+
         internal bool isFirstVideoOwner() => queuedByPlayer[0] == localPlayerId;
-        
+
         internal void LogDebug(string message)
         {
             if (EnableDebug) Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
-        
+
         /* VRC SDK wrapper functions to enable mocking for tests */
 
         internal virtual bool isMaster() => Networking.IsMaster;
@@ -264,6 +272,9 @@ namespace USharpVideoQueue.Runtime
             Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
 
         internal virtual int getCurrentServerTime() => Networking.GetServerTimeInMilliseconds();
+
+        internal virtual void SendCustomEventDelayedSeconds(string name, int delay) =>
+            base.SendCustomEventDelayedSeconds(name, delay);
 
         /* VRC Runtime Events */
 
@@ -319,6 +330,7 @@ namespace USharpVideoQueue.Runtime
         public void OnUSharpVideoPlay()
         {
             VideoPlayerIsLoading = false;
+            SendCallback(OnUSharpVideoQueuePlayingNextVideo);
         }
 
         /* Callback Handling */
