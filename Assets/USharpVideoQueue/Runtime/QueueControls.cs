@@ -51,7 +51,7 @@ namespace USharpVideoQueue.Runtime
                 string description = Queue.GetTitle(i);
                 string playerName = getPlayerNameByID(Queue.GetQueuedByPlayer(i));
                 registeredQueueItems[i].SetContent(description, playerName);
-                registeredQueueItems[i].SetRemoveEnabled(Queue.IsPlayerPermittedToRemoveVideo(i));
+                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(i));
             }
         }
 
