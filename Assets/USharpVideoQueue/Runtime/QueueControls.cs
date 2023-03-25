@@ -2,7 +2,6 @@
 using UnityEngine;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
-using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
 namespace USharpVideoQueue.Runtime
 {
@@ -21,6 +20,12 @@ namespace USharpVideoQueue.Runtime
 
         public void EnsureInitialized()
         {
+            if (Equals(Queue, null))
+            {
+                Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
+                return;
+            }
+            
             if (initialized) return;
             initialized = true;
             
@@ -57,6 +62,8 @@ namespace USharpVideoQueue.Runtime
 
         public void OnURLInput()
         {
+            if (UIURLInput == null) return;
+            
             VRCUrl url = UIURLInput.GetUrl();
             if (url != null)
             {

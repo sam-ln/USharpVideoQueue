@@ -13,10 +13,26 @@ public class UIQueueItem : UdonSharpBehaviour
     public Button RemoveButton;
     public int Rank;
     public QueueControls QueueControls;
+
+    internal bool hasDescription;
+    internal bool hasQueuedBy;
+    internal bool hasRank;
+    internal bool hasRemoveButton;
     internal void Start()
     {
+        if (Equals(QueueControls, null))
+        {
+            Debug.LogError("UIQueueItem is missing QueueControls reference! Please check in the inspector!");
+            return;
+        }
+        
+        hasDescription = Description != null;
+        hasQueuedBy = QueuedBy != null;
+        hasRank = RankText != null;
+        hasRemoveButton = RemoveButton != null;
+        
         QueueControls.RegisterUIQueueItem(this);
-        if(RankText != null) RankText.text = $"{Rank+1}";
+        if(hasRank) RankText.text = $"{Rank+1}";
     }
 
     public void OnRemovePressed()
@@ -26,8 +42,8 @@ public class UIQueueItem : UdonSharpBehaviour
 
     public virtual void SetContent(string content, string queuedBy)
     {
-        Description.text = content;
-        QueuedBy.text = queuedBy;
+        if(hasDescription) Description.text = content;
+        if(hasQueuedBy) QueuedBy.text = queuedBy;
     }
 
     public virtual void SetActive(bool active)
@@ -37,6 +53,6 @@ public class UIQueueItem : UdonSharpBehaviour
 
     public virtual void SetRemoveEnabled(bool enabled)
     {
-        RemoveButton.gameObject.SetActive(enabled);
+        if(hasRemoveButton) RemoveButton.gameObject.SetActive(enabled);
     }
 }
