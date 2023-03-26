@@ -5,6 +5,7 @@ using VRC.SDKBase;
 
 namespace USharpVideoQueue.Runtime
 {
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [DefaultExecutionOrder(-10)]
     public class QueueControls : UdonSharpBehaviour
     {

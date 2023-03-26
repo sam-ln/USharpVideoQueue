@@ -19,7 +19,7 @@ MonoBehaviour:
   sourceCsScript: {fileID: 11500000, guid: 8d06f7c2cf2d7904189232dfb6b79d16, type: 3}
   scriptVersion: 2
   compiledVersion: 2
-  behaviourSyncMode: 0
+  behaviourSyncMode: 4
   hasInteractEvent: 0
   scriptID: -7697218724765686629
   serializationData:
@@ -902,13 +902,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: <VideoPlayerIsLoading>k__BackingField
+      Data: <WaitingForPlayback>k__BackingField
     - Name: $v
       Entry: 7
       Data: 48|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: <VideoPlayerIsLoading>k__BackingField
+      Data: <WaitingForPlayback>k__BackingField
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 8

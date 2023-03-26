@@ -19,7 +19,7 @@ MonoBehaviour:
   sourceCsScript: {fileID: 11500000, guid: 03dcb64ec2994514aaad951fa9fb1b80, type: 3}
   scriptVersion: 2
   compiledVersion: 2
-  behaviourSyncMode: 0
+  behaviourSyncMode: 1
   hasInteractEvent: 0
   scriptID: 5357068554524104050
   serializationData:
@@ -176,7 +176,7 @@ MonoBehaviour:
       Data: 10|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: UIQueueItem[], USharpVideoQueue.Runtime
+      Data: USharpVideoQueue.Runtime.UIQueueItem[], USharpVideoQueue.Runtime
     - Name: 
       Entry: 8
       Data: 

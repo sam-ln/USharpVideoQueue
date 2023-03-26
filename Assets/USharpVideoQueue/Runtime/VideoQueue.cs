@@ -7,6 +7,7 @@ using USharpVideoQueue.Runtime.Utility;
 
 namespace USharpVideoQueue.Runtime
 {
+    [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
@@ -38,7 +39,7 @@ namespace USharpVideoQueue.Runtime
         internal readonly string FunctionEventIdentifier = "func";
         internal readonly string CallbackEventIdentifier = "call";
         
-        public bool VideoPlayerIsLoading { get; private set; }
+        public bool WaitingForPlayback { get; private set; }
 
         internal void Start()
         {
@@ -50,7 +51,7 @@ namespace USharpVideoQueue.Runtime
             if (initialized) return;
 
             initialized = true;
-            VideoPlayerIsLoading = false;
+            WaitingForPlayback = false;
             eventTimestampThreshold = getCurrentServerTime();
             localPlayerId = getPlayerID(getLocalPlayer());
 
@@ -103,7 +104,7 @@ namespace USharpVideoQueue.Runtime
             ensureOwnership();
             enqueueVideoData(url, title);
             invokeEventsAndSynchronize();
-            if (wasEmpty) playFirst();
+            if (wasEmpty) PlayFirst();
         }
         
 
@@ -136,7 +137,7 @@ namespace USharpVideoQueue.Runtime
 
         public void RequestNext()
         {
-            if (VideoPlayerIsLoading) return;
+            if (WaitingForPlayback) return;
             skipToNextVideo();
         }
 
@@ -154,22 +155,19 @@ namespace USharpVideoQueue.Runtime
             else
             {
                 QueueCallbackEvent(OnUSharpVideoQueueVideoEnded);
-                QueueFunctionEvent(nameof(PlayFirstAfterPauseIfVideoOwner));
+                QueueFunctionEvent(nameof(SchedulePlayFirstAfterPauseIfVideoOwner));
             }
 
             invokeEventsAndSynchronize();
         }
 
-        public void PlayFirstAfterPauseIfVideoOwner()
+        public void SchedulePlayFirstAfterPauseIfVideoOwner()
         {
-            SendCustomEventDelayedSeconds(nameof(PlayFirstIfVideoOwner), PauseSecondsBetweenVideos);
-        }
-
-        public void PlayFirstIfVideoOwner()
-        {
-            VideoPlayerIsLoading = true;
-            if (!isFirstVideoOwner()) return;
-            playFirst();
+            WaitingForPlayback = true;
+            if (isFirstVideoOwner())
+            {
+                SendCustomEventDelayedSeconds(nameof(PlayFirst), PauseSecondsBetweenVideos);
+            }
         }
 
         public int QueuedVideosCount()
@@ -255,7 +253,7 @@ namespace USharpVideoQueue.Runtime
         }
 
 
-        internal void playFirst()
+        public void PlayFirst()
         {
             VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
         }
@@ -346,7 +344,7 @@ namespace USharpVideoQueue.Runtime
         public void OnUSharpVideoError()
         {
             logDebug($"Received USharpVideoError! Is player Video Player owner? {isVideoPlayerOwner()}");
-            VideoPlayerIsLoading = false;
+            WaitingForPlayback = false;
             if (isVideoPlayerOwner())
             {
                 QueueCallbackEvent(OnUSharpVideoQueueSkippedError);
@@ -356,12 +354,12 @@ namespace USharpVideoQueue.Runtime
 
         public void OnUSharpVideoLoadStart()
         {
-            VideoPlayerIsLoading = true;
+            WaitingForPlayback = true;
         }
 
         public void OnUSharpVideoPlay()
         {
-            VideoPlayerIsLoading = false;
+            WaitingForPlayback = false;
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
         }
 
