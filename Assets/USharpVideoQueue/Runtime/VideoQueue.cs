@@ -50,6 +50,11 @@ namespace USharpVideoQueue.Runtime
         {
             if (initialized) return;
 
+            if (Equals(VideoPlayer, null))
+            {
+                logError("VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
+            }
+            
             initialized = true;
             WaitingForPlayback = false;
             eventTimestampThreshold = getCurrentServerTime();
@@ -287,6 +292,11 @@ namespace USharpVideoQueue.Runtime
         internal void logWarning(string message)
         {
             Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
+        }
+        
+        internal void logError(string message)
+        {
+            Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
         
         /* VRC SDK wrapper functions to enable mocking for tests */
