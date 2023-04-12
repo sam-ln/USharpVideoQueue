@@ -3,6 +3,7 @@ using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using Moq;
+using UnityEngine;
 using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Editor.TestUtils;
 
@@ -161,13 +162,27 @@ namespace USharpVideoQueue.Tests.Editor
             queue.OnUSharpVideoLoadStart();
             //loading failed
             queue.OnUSharpVideoError();
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError());
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
             //third video starts playing
             queue.OnUSharpVideoLoadStart();
             queue.OnUSharpVideoPlay();
             //third video has ended
             queue.OnUSharpVideoEnd();
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded());
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
+        }
+
+        [Test]
+        public void FinalVideoEndedEmittedAfterFinalVideoFails()
+        {
+            var url1 = new VRCUrl("https://url.one");
+            //queue first video
+            queue.QueueVideo(url1);
+            //video fails to play
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoError();
+            
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
+            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
         }
 
         [Test]
