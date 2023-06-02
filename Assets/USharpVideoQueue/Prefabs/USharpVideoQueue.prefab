@@ -55,7 +55,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 728057508225996250}
-  MaxQueueItems: 6
+  MaxQueueItems: 8
   PauseSecondsBetweenVideos: 5
   EnableDebug: 0
   VideoLimitPerUser: 3
@@ -79,7 +79,7 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0
-  _syncMethod: 2
+  _syncMethod: 3
   serializedProgramAsset: {fileID: 11400000, guid: 0601789686d9f034f9fd290264a48533,
     type: 2}
   programSource: {fileID: 11400000, guid: 743dfc9f618c6be4a93a6dfc3a8ff0e0, type: 2}
