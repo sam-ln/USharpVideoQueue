@@ -92,10 +92,10 @@ namespace USharpVideoQueue.Tests.Editor
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
-            queue.RequestNext();
+            queue.RequestRemoveVideo(0);
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
-        
+
         [Test]
         public void VideoPlayerIsClearedAfterLastVideoIsRemoved()
         {
@@ -180,7 +180,7 @@ namespace USharpVideoQueue.Tests.Editor
             //video fails to play
             queue.OnUSharpVideoLoadStart();
             queue.OnUSharpVideoError();
-            
+
             eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
             eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
         }
@@ -203,9 +203,8 @@ namespace USharpVideoQueue.Tests.Editor
             }
         }
 
-        public void DequeueOrRemoveNotExistingVideo()
+        public void RemoveNotExistingVideo()
         {
-            queue.RequestNext();
             queue.RequestRemoveVideo(0);
         }
     }
