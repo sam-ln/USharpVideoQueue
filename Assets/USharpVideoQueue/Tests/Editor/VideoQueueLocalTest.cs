@@ -3,7 +3,6 @@ using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using UdonSharp.Video;
 using Moq;
-using UnityEngine;
 using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Editor.TestUtils;
 
