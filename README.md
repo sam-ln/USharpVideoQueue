@@ -1,6 +1,6 @@
 # USharpVideoQueue
 
-A queue asset for [MerlinVR's USharpVideo player](https://github.com/MerlinVR/USharpVideo), designed for stability and easy integration into VRChat worlds.
+A synced video queue asset for [MerlinVR's USharpVideo player](https://github.com/MerlinVR/USharpVideo), designed for stability and easy integration into VRChat worlds.
 
 <img src="https://github.com/sam-ln/USharpVideoQueue/assets/82455742/ea3b0a97-4f1a-47a2-9327-93e72341dec2" width=35% height=35%>
 
