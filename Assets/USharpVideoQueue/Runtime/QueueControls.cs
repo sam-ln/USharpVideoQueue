@@ -26,10 +26,10 @@ namespace USharpVideoQueue.Runtime
                 Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
                 return;
             }
-            
+
             if (initialized) return;
             initialized = true;
-            
+
             Queue.RegisterCallbackReceiver(this);
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
@@ -55,7 +55,7 @@ namespace USharpVideoQueue.Runtime
                 if (Equals(registeredQueueItems, null)) continue;
                 registeredQueueItems[i].SetActive(true);
                 string description = Queue.GetTitle(i);
-                string playerName = getPlayerNameByID(Queue.GetQueuedByPlayer(i));
+                string playerName = getPlayerNameByID(Queue.GetVideoOwner(i));
                 registeredQueueItems[i].SetContent(description, playerName);
                 registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(i));
             }
@@ -64,7 +64,7 @@ namespace USharpVideoQueue.Runtime
         public void OnURLInput()
         {
             if (UIURLInput == null) return;
-            
+
             VRCUrl url = UIURLInput.GetUrl();
             if (url != null)
             {

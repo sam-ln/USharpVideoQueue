@@ -11,10 +11,18 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
-        public int MaxQueueItems = 6;
-        public int PauseSecondsBetweenVideos = 5;
-        public bool EnableDebug = false;
+
+        [Tooltip("Total limit for queued videos")]
+        public int MaxQueueItems = 8;
+        [Tooltip("Indiviual limit per user for queued videos")]
         public int VideoLimitPerUser = 3;
+        [Tooltip("Time to wait between videos")]
+        public int PauseSecondsBetweenVideos = 5;
+        [Tooltip("Should Debug messages be written to the log?")]
+        public bool EnableDebug = false;
+        [Tooltip("The USharpVideoPlayer object that this queue should manage")]
+        public USharpVideoPlayer VideoPlayer;
+
 
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
@@ -22,7 +30,6 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueVideoEnded = "OnUSharpVideoQueueVideoEnded";
         public const string OnUSharpVideoQueueFinalVideoEnded = "OnUSharpVideoQueueFinalVideoEnded";
 
-        public USharpVideoPlayer VideoPlayer;
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
 
         [UdonSynced] internal VRCUrl[] queuedVideos;
@@ -38,7 +45,12 @@ namespace USharpVideoQueue.Runtime
 
         internal readonly string FunctionEventIdentifier = "func";
         internal readonly string CallbackEventIdentifier = "call";
-        
+
+        /// <summary>
+        /// Will be true if the player is currently loading a video or 
+        /// the queue is waiting for the timespan defined in [PauseSecondsBetweenVideos]. 
+        /// While this is true, changes to the first video in queue are disregarded.
+        /// </summary>
         public bool WaitingForPlayback { get; private set; }
 
         internal void Start()
@@ -46,6 +58,9 @@ namespace USharpVideoQueue.Runtime
             EnsureInitialized();
         }
 
+        /// <summary>
+        /// Should be run by any script that accesses the queue before it was initialized.
+        /// </summary>
         public void EnsureInitialized()
         {
             if (initialized) return;
@@ -54,7 +69,7 @@ namespace USharpVideoQueue.Runtime
             {
                 logError("VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
             }
-            
+
             initialized = true;
             WaitingForPlayback = false;
             eventTimestampThreshold = getCurrentServerTime();
@@ -85,12 +100,22 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
+
+        /// <summary>
+        /// Adds a VRCUrl to the queue if the queue is not full and the user limit would not be exceeded. Uses the url string as title.
+        /// </summary>
+        /// <param name="url"></param>
         public void QueueVideo(VRCUrl url)
         {
             if (url == null) return;
             QueueVideo(url, url.Get());
         }
 
+        /// <summary>
+        /// Adds a VRCUrl to the queue if the queue is not full and the user limit would not be exceeded.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="title"></param>
         public void QueueVideo(VRCUrl url, string title)
         {
             if (url == null || !Validation.ValidateURL(url.Get()))
@@ -104,27 +129,34 @@ namespace USharpVideoQueue.Runtime
                 logWarning($"Video with title '{title}' was not queued because the video limit per user was reached!");
                 return;
             }
-            
+
             bool wasEmpty = IsEmpty(queuedVideos);
             ensureOwnership();
             enqueueVideoData(url, title);
             invokeEventsAndSynchronize();
-            if (wasEmpty) PlayFirst();
+            if (wasEmpty) playFirst();
         }
-        
 
+
+        /// <summary>
+        /// Removes the video at [index] from the queue if the user has permission to do so. 
+        /// This is the case if the user has queued the video themselves or they have elevated rights.
+        /// </summary>
+        /// <param name="index"></param>
         public void RequestRemoveVideo(int index)
         {
             //Check if user is allowed to remove video
             if (!IsLocalPlayerPermittedToRemoveVideo(index)) return;
-            
-            if (index == 0)
+
+            if (index != 0)
             {
-                RequestNext();
+                removeVideo(index);
                 return;
             }
 
-            removeVideo(index);
+            // video with index 0 is only allowed to be removed when it is currently loading to prevent player inconsitencies.
+            if (!WaitingForPlayback) skipToNextVideo();
+
         }
 
         internal void removeVideo(int index)
@@ -138,13 +170,7 @@ namespace USharpVideoQueue.Runtime
             removeVideoData(index);
             invokeEventsAndSynchronize();
         }
-        
 
-        public void RequestNext()
-        {
-            if (WaitingForPlayback) return;
-            skipToNextVideo();
-        }
 
         internal void skipToNextVideo()
         {
@@ -171,44 +197,67 @@ namespace USharpVideoQueue.Runtime
             WaitingForPlayback = true;
             if (isFirstVideoOwner())
             {
-                SendCustomEventDelayedSeconds(nameof(PlayFirst), PauseSecondsBetweenVideos);
+                SendCustomEventDelayedSeconds(nameof(playFirst), PauseSecondsBetweenVideos);
             }
         }
 
+        /// <summary>
+        /// Returns the count of currently queued videos.
+        /// </summary>
         public int QueuedVideosCount()
         {
             return Count(queuedVideos);
         }
 
+        /// <summary>
+        /// Returns the VRCUrl currently queued at [index]. Returns VRCUrl.Empty if [index] not valid.
+        /// </summary>
         public VRCUrl GetURL(int index)
         {
-            if (index >= QueuedVideosCount()) return VRCUrl.Empty;
+            if (!isIndexValid(index)) return VRCUrl.Empty;
             return queuedVideos[index];
         }
-
+        /// <summary>
+        /// Returns the title of the video currently queued at [index]. Returns an empty string if [index] is not valid. 
+        /// </summary>
         public string GetTitle(int index)
         {
-            if (index >= QueuedVideosCount()) return string.Empty;
+            if (!isIndexValid(index)) return string.Empty;
             return queuedTitles[index];
         }
 
-        public int GetQueuedByPlayer(int index)
+        /// <summary>
+        /// Returns the player id of the player who queued the video at [index]. Returns -1 if [index] is not valid. 
+        /// </summary>
+        public int GetVideoOwner(int index)
         {
-            if (index >= QueuedVideosCount()) return -1;
+            if (!isIndexValid(index)) return -1;
             return queuedByPlayer[index];
         }
 
+        /// <summary>
+        /// Returns whether the local player is permitted to remove the video at [index].
+        /// This is the case if the user has queued the video themselves or they have elevated rights. 
+        /// </summary>
         public bool IsLocalPlayerPermittedToRemoveVideo(int index)
         {
-            return queuedByPlayer[index] == localPlayerId || localPlayerHasElevatedRights();
+            if (localPlayerHasElevatedRights()) return true;
+            return GetVideoOwner(index) == localPlayerId;
         }
-        
+
+        /// <summary>
+        /// Returns whether the local player is permitted queue another video.
+        /// This is the case if the [VideoLimitPerUser] was not reached yet or if they have elevated rights.
+        /// </summary>
         public bool IsLocalPlayerPermittedToQueueVideo()
         {
             if (localPlayerHasElevatedRights()) return true;
             return QueuedVideosCountByUser(localPlayerId) < VideoLimitPerUser;
         }
-        
+
+        /// <summary>
+        /// Returns the count of all videos currently queued by the player with the id [playerID].
+        /// </summary>
         public int QueuedVideosCountByUser(int playerID)
         {
             int videoCount = 0;
@@ -243,13 +292,13 @@ namespace USharpVideoQueue.Runtime
         internal void removeVideoData(int index)
         {
             if (index >= QueuedVideosCount()) return;
-            
+
             Remove(queuedVideos, index);
             Remove(queuedTitles, index);
             Remove(queuedByPlayer, index);
             OnQueueContentChange();
         }
-        
+
         internal void invokeEventsAndSynchronize()
         {
             Debug.Assert(isOwner());
@@ -257,8 +306,8 @@ namespace USharpVideoQueue.Runtime
             synchronizeData();
         }
 
-
-        public void PlayFirst()
+        //should be considered internal, must be public to be called by SendCustomEventDelayedSeconds
+        public void playFirst()
         {
             VideoPlayer.PlayVideo((VRCUrl)First(queuedVideos));
         }
@@ -277,13 +326,21 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.StopVideo();
         }
 
+        /// <summary>
+        /// Override this function to integrate with other permission systems!
+        /// </summary>
         internal virtual bool localPlayerHasElevatedRights()
         {
             return isMaster();
         }
 
+        internal bool isIndexValid(int index)
+        {
+            return index < QueuedVideosCount() && index >= 0;
+        }
+
         internal bool isFirstVideoOwner() => queuedByPlayer[0] == localPlayerId;
-        
+
         internal void logDebug(string message)
         {
             if (EnableDebug) Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
@@ -293,12 +350,12 @@ namespace USharpVideoQueue.Runtime
         {
             Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
         }
-        
+
         internal void logError(string message)
         {
             Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
-        
+
         /* VRC SDK wrapper functions to enable mocking for tests */
 
         internal virtual bool isMaster() => Networking.IsMaster;
