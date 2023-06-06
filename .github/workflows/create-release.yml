@@ -1,0 +1,50 @@
+name: Create Release with Unity-Package
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      package_path: "~/USharpVideoQueue_${{  github.ref_name }}.unitypackage"
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '3.1.x'
+
+      # Install the packager. We are putting it outside the working directory so we dont include it by mistake
+      - name: Install Unity Packager
+        run: |
+          git clone https://github.com/Lachee/Unity-Package-Exporter.git "../tools/unity-package-exporter"
+          dotnet publish -c Release -o ../tools "../tools/unity-package-exporter/UnityPackageExporter"
+        
+      # Pack the assets
+      - name: Package Project
+        run: |
+          echo "Creating package ${{env.package_path}}"
+          dotnet ../tools/UnityPackageExporter.dll ./ ${{env.package_path}} --assets "Assets/USharpVideoQueue/**.*" --exclude "Assets/USharpVideoQueue/Tests/**.*" --exclude "Assets/USharpVideoQueue/Tests.meta" --exclude "Assets/USharpVideoQueue/Runtime/AssemblyInfo.cs" --exclude "Assets/USharpVideoQueue/Runtime/AssemblyInfo.cs.meta" --exclude "Assets/USharpVideoQueue/Runtime/USharpVideoQueue.Runtime.asmdef" --exclude "Assets/USharpVideoQueue/Runtime/USharpVideoQueue.Runtime.asmdef.meta" --exclude "Assets/USharpVideoQueue/Runtime/USharpVideoQueue.Runtime.asset" --exclude "Assets/USharpVideoQueue/Runtime/USharpVideoQueue.Runtime.asset.meta" --skip-dependency-check
+        
+      # Upload artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3.0.0
+        with:
+          name: Unity Package
+          path: ${{env.package_path}}   
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+       - name: Download binary artifact
+         uses: actions/download-artifact@v2
+         with:
+          name: Unity Package
+          path: "~"
+       - name: Release
+         uses: softprops/action-gh-release@v1
+         with:
+          files: /home/runner/*.unitypackage
+          draft: true
