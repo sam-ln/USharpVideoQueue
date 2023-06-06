@@ -11,7 +11,7 @@ A queue asset for [MerlinVR's USharpVideo player](https://github.com/MerlinVR/US
 - Set a limit for queued videos per user
 - Instance owner can moderate videos
 - Easy to integrate with permission systems
-
+- Allows multiple displays/controls for the same queue
 
 
 ## Setup
