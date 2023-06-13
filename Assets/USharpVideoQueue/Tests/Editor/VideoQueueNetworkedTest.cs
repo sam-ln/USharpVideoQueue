@@ -273,7 +273,8 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void CannotQueueVideoIfUserLimitWouldBeExceeded()
         {
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.VideoLimitPerUser = 1);
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
             queue1.QueueVideo(url0);
             //Video should be queued
             Assert.AreEqual(1, queue0.QueuedVideosCount());
@@ -285,12 +286,34 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void InstanceMasterCanExceedVideoLimit()
         {
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.VideoLimitPerUser = 1);
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
             queue0.QueueVideo(url0);
             //Video should be queued
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             queue0.QueueVideo(url1);
             //Video should also be queued, although exceeding the user video limit
+            Assert.AreEqual(2, queue1.QueuedVideosCount());
+        }
+
+        [Test]
+        public void IncreasingVideoLimitPerVideo()
+        {
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
+            queue1.QueueVideo(url0);
+            //Video should be queued
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            queue1.QueueVideo(url1);
+            //Video should not be queued
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+
+            queue0.SetVideoLimitPerUser(2);
+            queue1.QueueVideo(url1);
+            //Video should be queued
+            Assert.AreEqual(2, queue0.QueuedVideosCount());
             Assert.AreEqual(2, queue1.QueuedVideosCount());
         }
     }
