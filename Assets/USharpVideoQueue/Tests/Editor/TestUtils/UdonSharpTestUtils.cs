@@ -7,6 +7,7 @@ using UnityEngine;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace USharpVideoQueue.Tests.Editor.TestUtils
 {
@@ -23,20 +24,19 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
         public static void SimulateSerialization<T>(T source, T target) where T : UdonSharpBehaviour
         {
             source.OnPreSerialization();
-            foreach (FieldInfo prop in typeof(VideoQueue).GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
+            var allFields = typeof(VideoQueue).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            var udonSyncedFields = allFields.Where(field => Attribute.IsDefined(field, typeof(UdonSyncedAttribute)));
+            foreach (FieldInfo prop in udonSyncedFields)
             {
-                if (Attribute.IsDefined(prop, typeof(UdonSyncedAttribute)))
+                if (prop.FieldType.IsArray)
                 {
-                    if (prop.FieldType.IsArray)
-                    {
-                        Array sourceArray = (Array)prop.GetValue(source);
-                        Array clonedArray = (Array)sourceArray.Clone();
-                        prop.SetValue(target, clonedArray);
-                    }
-                    else
-                    {
-                        prop.SetValue(target, prop.GetValue(source));
-                    }
+                    Array sourceArray = (Array)prop.GetValue(source);
+                    Array clonedArray = (Array)sourceArray.Clone();
+                    prop.SetValue(target, clonedArray);
+                }
+                else
+                {
+                    prop.SetValue(target, prop.GetValue(source));
                 }
             }
 
@@ -105,7 +105,6 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
 
         public class VideoQueueMockGroup
         {
-
             public readonly string USharpVideoObjectName = "USharpVideo";
             public List<VideoQueueMockSet> MockSets { get; set; }
             public VideoQueueMockSet Owner;
@@ -126,7 +125,7 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                 Master = MockSets[0];
                 ObjectOwners[USharpVideoObjectName] = MockSets[0];
                 ServerTime = 10;
-                
+
                 SetupMocks();
             }
 
@@ -136,7 +135,7 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                 ServerTime += 10;
                 foreach (var mockSet in MockSets)
                 {
-                    if(mockSet == source) continue;
+                    if (mockSet == source) continue;
                     SimulateSerialization(source.VideoQueueMock.Object, mockSet.VideoQueueMock.Object);
                 }
             }
@@ -154,10 +153,7 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                 foreach (var mockSet in MockSets)
                 {
                     mockSet.VideoQueueMock.Setup((queue => queue.synchronizeData()))
-                        .Callback(() =>
-                        {
-                            SerializeGroup(mockSet);
-                        });
+                        .Callback(() => { SerializeGroup(mockSet); });
 
                     mockSet.VideoQueueMock.Setup(queue => queue.isOwner()).Returns(() => mockSet == Owner);
                     mockSet.VideoQueueMock.Setup(queue => queue.becomeOwner()).Callback(() => Owner = mockSet);
