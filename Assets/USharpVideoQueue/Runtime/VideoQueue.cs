@@ -298,11 +298,11 @@ namespace USharpVideoQueue.Runtime
         /// <summary>
         /// Sets whether the limit for players without elevated rights should be enforced. Requires elevated rights.
         /// </summary>
-        public void SetVideoLimitPerUserEnabled(bool enable)
+        public void SetVideoLimitPerUserEnabled(bool enabled)
         {
             if (!localPlayerHasElevatedRights()) return;
             ensureOwnership();
-            videoLimitPerUserEnabled = enable;
+            videoLimitPerUserEnabled = enabled;
             synchronizeData();
         }
 

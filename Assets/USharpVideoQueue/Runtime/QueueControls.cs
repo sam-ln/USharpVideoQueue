@@ -21,16 +21,19 @@ namespace USharpVideoQueue.Runtime
 
         public void EnsureInitialized()
         {
-            if (Equals(Queue, null))
-            {
-                Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
-                return;
-            }
 
             if (initialized) return;
             initialized = true;
 
-            Queue.RegisterCallbackReceiver(this);
+            if (Equals(Queue, null))
+            {
+                Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
+            }
+            else
+            {
+                Queue.RegisterCallbackReceiver(this);
+            }
+
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
         }
@@ -52,7 +55,7 @@ namespace USharpVideoQueue.Runtime
 
             for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Queue.QueuedVideosCount()); i++)
             {
-                if (Equals(registeredQueueItems, null)) continue;
+                if (Equals(registeredQueueItems[i], null)) continue;
                 registeredQueueItems[i].SetActive(true);
                 string description = Queue.GetTitle(i);
                 string playerName = getPlayerNameByID(Queue.GetVideoOwner(i));
@@ -76,12 +79,10 @@ namespace USharpVideoQueue.Runtime
 
         public void RegisterUIQueueItem(UIQueueItem queueItem)
         {
+            EnsureInitialized();
             //Nullcheck with Equals for testability reasons
             if (UIQueueItem.Equals(queueItem, null))
                 return;
-
-            if (registeredQueueItems == null)
-                registeredQueueItems = new UIQueueItem[0];
 
             if (queueItem.Rank >= registeredQueueItems.Length - 1)
             {
