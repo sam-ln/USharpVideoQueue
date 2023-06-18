@@ -13,6 +13,11 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
 {
     public static class UdonSharpTestUtils
     {
+        public static VRCUrl CreateUniqueVRCUrl()
+        {
+            return new VRCUrl($"https://{Math.Abs(Guid.NewGuid().GetHashCode())}.com/video.mp4");
+        }
+
         /// <summary>
         /// Simulates the RequestSerialization operation with UdonSharp.
         /// Calls OnPreSerialization on source, Copies members which have the [UdonSynced] attribute from source to target,

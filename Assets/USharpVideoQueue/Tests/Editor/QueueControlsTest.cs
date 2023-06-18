@@ -21,6 +21,8 @@ namespace USharpVideoQueue.Tests.Editor
         private Mock<UIQueueItem>[] queueItems;
         private UdonSharpTestUtils.VideoQueueMockGroup MockGroup;
 
+        private string MOCK_PLAYER_NAME = "Player Name";
+
         [SetUp]
         public void Prepare()
         {
@@ -29,9 +31,9 @@ namespace USharpVideoQueue.Tests.Editor
             queue0 = MockGroup.MockSets[0].VideoQueueMock.Object;
             queue1 = MockGroup.MockSets[1].VideoQueueMock.Object;
 
-            controlsMock = new Mock<QueueControls>{CallBase = true};
+            controlsMock = new Mock<QueueControls> { CallBase = true };
             controls = controlsMock.Object;
-            controlsMock.Setup(controls => controls.getPlayerNameByID(It.IsAny<int>())).Returns("Player Name");
+            controlsMock.Setup(controls => controls.getPlayerNameByID(It.IsAny<int>())).Returns(MOCK_PLAYER_NAME);
 
             uiURLInput = new GameObject().AddComponent<VRCUrlInputField>();
             controls.Queue = queue0;
@@ -45,8 +47,7 @@ namespace USharpVideoQueue.Tests.Editor
             queueItems = createQueueItems(queueItemCount, controls);
             foreach (var queueItem in queueItems)
             {
-                queueItem.Verify(item => item.SetActive(true), Times.Never);
-                queueItem.Verify(item => item.SetActive(false), Times.AtLeastOnce);
+                Assert.AreEqual(false, queueItem.Object.active);
             }
         }
 
@@ -61,22 +62,23 @@ namespace USharpVideoQueue.Tests.Editor
         public void QueueingVideoFillsQueueItems()
         {
             queueItems = createQueueItems(2, controls);
-            queue0.QueueVideo(new VRCUrl("https://url.one"));
-            queueMock.Verify(queue => queue.SendCallback("OnUSharpVideoQueueContentChange"));
-            queueItems[0].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            queueItems[0].Verify(item => item.SetActive(true));
-            queueItems[1].Verify(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            queueItems[1].Verify(item => item.SetActive(false));
+            VRCUrl url = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue0.QueueVideo(url);
+            Assert.AreEqual(true, queueItems[0].Object.active);
+            Assert.AreEqual(url.ToString(), queueItems[0].Object.description);
+            Assert.AreEqual(MOCK_PLAYER_NAME, queueItems[0].Object.queuedBy);
+
+            Assert.AreEqual(false, queueItems[1].Object.active);
         }
 
         [Test]
         public void PressingRemoveRemovesCorrectRankAndVideoMovesForwardInQueue()
         {
             queueItems = createQueueItems(2, controls);
-            VRCUrl url1 = new VRCUrl("https://url.one");
+            VRCUrl url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue0.QueueVideo(url1);
             queue0.OnUSharpVideoPlay();
-            VRCUrl url2 = new VRCUrl("https://url.two");
+            VRCUrl url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue0.QueueVideo(url2);
             queueItems[0].Object.OnRemovePressed();
             Assert.AreEqual(1, Count(queue0.queuedVideos));
@@ -86,15 +88,28 @@ namespace USharpVideoQueue.Tests.Editor
         public void RemoveButtonOnlyEnabledOnPermittedVideos()
         {
             //make player 1 master of the instance
-            VRCUrl url1 = new VRCUrl("https://url.one");
+            VRCUrl url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             MockGroup.Master = MockGroup.MockSets[1];
             queueItems = createQueueItems(2, controls);
             queue0.QueueVideo(url1);
             queue1.QueueVideo(url1);
 
             //video 0 should be removable, video 1 should not
-            queueItems[0].Verify(item => item.SetRemoveEnabled(true));
-            queueItems[1].Verify(item => item.SetRemoveEnabled(false));
+            Assert.AreEqual(true, queueItems[0].Object.removeEnabled);
+            Assert.AreEqual(false, queueItems[1].Object.removeEnabled);
+        }
+
+        [Test]
+        public void SwitchPageForthAndBack()
+        {
+            queueItems = createQueueItems(2, controls);
+            for (int i = 0; i < 3; i++)
+            {
+                queue0.QueueVideo(UdonSharpTestUtils.CreateUniqueVRCUrl());
+            }
+            controls.SetCurrentPage(1);
+            Assert.AreEqual(true, queueItems[0].Object.active);
+            Assert.AreEqual(false, queueItems[1].Object.active);
         }
 
         private Mock<UIQueueItem>[] createQueueItems(int count, QueueControls queueControls)
@@ -106,8 +121,7 @@ namespace USharpVideoQueue.Tests.Editor
                 queueItem.Object.Rank = i;
                 queueItem.Object.QueueControls = queueControls;
                 queueItem.Object.Start();
-                queueItem.Setup(item => item.SetContent(It.IsAny<string>(), It.IsAny<string>()));
-                queueItem.Setup(item => item.SetActive(It.IsAny<bool>()));
+                queueItem.Setup(item => item.updateGameObjects());
                 queueItems[i] = queueItem;
             }
 

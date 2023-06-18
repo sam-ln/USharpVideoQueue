@@ -22,8 +22,8 @@ namespace USharpVideoQueue.Tests.Editor
             MockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(2);
             queue0 = MockGroup.MockSets[0].VideoQueueMock.Object;
             queue1 = MockGroup.MockSets[1].VideoQueueMock.Object;
-            url0 = new VRCUrl("https://url.zero");
-            url1 = new VRCUrl("https://url.one");
+            url0 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             UdonSharpTestUtils.VideoQueueMockGroup mockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(playerCount);
             List<VRCUrl> testUrls = new List<VRCUrl>();
-            VRCUrl initialURL = new VRCUrl("https://initial.url");
+            VRCUrl initialURL = UdonSharpTestUtils.CreateUniqueVRCUrl();
             testUrls.Add(initialURL);
 
             mockGroup.MockSets[0].VideoQueueMock.Object.QueueVideo(initialURL);
@@ -122,7 +122,7 @@ namespace USharpVideoQueue.Tests.Editor
             mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
             for (int i = 1; i < playerCount; i++)
             {
-                VRCUrl url = new VRCUrl($"https://url.number/{i}");
+                VRCUrl url = UdonSharpTestUtils.CreateUniqueVRCUrl();
                 mockGroup.MockSets[i].VideoQueueMock.Object.QueueVideo(url);
                 testUrls.Add(url);
             }

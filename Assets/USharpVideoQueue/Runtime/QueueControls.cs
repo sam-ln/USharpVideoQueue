@@ -14,6 +14,8 @@ namespace USharpVideoQueue.Runtime
         internal UIQueueItem[] registeredQueueItems;
         internal bool initialized = false;
 
+        internal int currentPage = 0;
+
         internal void Start()
         {
             EnsureInitialized();
@@ -43,6 +45,12 @@ namespace USharpVideoQueue.Runtime
             UpdateQueueItems();
         }
 
+        public void SetCurrentPage(int currentPage)
+        {
+            this.currentPage = currentPage;
+            UpdateQueueItems();
+        }
+
         public void UpdateQueueItems()
         {
             Queue.EnsureInitialized();
@@ -53,14 +61,17 @@ namespace USharpVideoQueue.Runtime
                 queueItem.SetActive(false);
             }
 
-            for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Queue.QueuedVideosCount()); i++)
+            int firstDisplayedVideo = currentPage * registeredQueueItems.Length;
+            int videosOnCurrentPage = Mathf.Min(Queue.QueuedVideosCount() - firstDisplayedVideo, registeredQueueItems.Length);
+            for (int i = 0; i < videosOnCurrentPage; i++)
             {
+                int videoIndex = i + firstDisplayedVideo;
                 if (Equals(registeredQueueItems[i], null)) continue;
                 registeredQueueItems[i].SetActive(true);
-                string description = Queue.GetTitle(i);
-                string playerName = getPlayerNameByID(Queue.GetVideoOwner(i));
+                string description = Queue.GetTitle(videoIndex);
+                string playerName = getPlayerNameByID(Queue.GetVideoOwner(videoIndex));
                 registeredQueueItems[i].SetContent(description, playerName);
-                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(i));
+                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
             }
         }
 
