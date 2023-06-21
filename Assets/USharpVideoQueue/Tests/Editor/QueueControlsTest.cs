@@ -111,6 +111,44 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(true, queueItems[0].Object.active);
             Assert.AreEqual(false, queueItems[1].Object.active);
         }
+        
+        [Test]
+        public void ShowingPreviousPageIfCurrentPageBecomesEmpty()
+        {
+            controls.SetPageAutomatically = true;
+            queueItems = createQueueItems(2, controls);
+            for (int i = 0; i < 3; i++)
+            {
+                queue0.QueueVideo(UdonSharpTestUtils.CreateUniqueVRCUrl());
+            }
+            controls.SetCurrentPage(1);
+            Assert.AreEqual(1, controls.CurrentPage);
+            
+            // one video plays through and is removed
+            queue0.OnUSharpVideoLoadStart();
+            queue0.OnUSharpVideoPlay();
+            queue0.OnUSharpVideoEnd();
+            
+            Assert.AreEqual(0, controls.CurrentPage);
+        }
+        
+        public void RemovingLastVideo()
+        {
+            controls.SetPageAutomatically = true;
+            queueItems = createQueueItems(2, controls);
+            for (int i = 0; i < 1; i++)
+            {
+                queue0.QueueVideo(UdonSharpTestUtils.CreateUniqueVRCUrl());
+            }
+            Assert.AreEqual(0, controls.CurrentPage);
+            
+            // last video plays through and is removed
+            queue0.OnUSharpVideoLoadStart();
+            queue0.OnUSharpVideoPlay();
+            queue0.OnUSharpVideoEnd();
+            
+            Assert.AreEqual(0, controls.CurrentPage);
+        }
 
         private Mock<UIQueueItem>[] createQueueItems(int count, QueueControls queueControls)
         {

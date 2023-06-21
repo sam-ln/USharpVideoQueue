@@ -1,5 +1,6 @@
 ﻿using UdonSharp;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 
@@ -11,10 +12,10 @@ namespace USharpVideoQueue.Runtime
     {
         public VideoQueue Queue;
         public VRCUrlInputField UIURLInput;
+        public bool SetPageAutomatically;
         internal UIQueueItem[] registeredQueueItems;
         internal bool initialized = false;
-
-        internal int currentPage = 0;
+        public int CurrentPage = 0;
 
         internal void Start()
         {
@@ -47,13 +48,15 @@ namespace USharpVideoQueue.Runtime
 
         public void SetCurrentPage(int currentPage)
         {
-            this.currentPage = currentPage;
+            this.CurrentPage = currentPage;
             UpdateQueueItems();
         }
 
         public void UpdateQueueItems()
         {
             Queue.EnsureInitialized();
+            
+            if(SetPageAutomatically) ensureCurrentPageHasVideos();
 
             foreach (var queueItem in registeredQueueItems)
             {
@@ -61,7 +64,7 @@ namespace USharpVideoQueue.Runtime
                 queueItem.SetActive(false);
             }
 
-            int firstDisplayedVideo = currentPage * registeredQueueItems.Length;
+            int firstDisplayedVideo = firstIndexOfPage(CurrentPage);
             int videosOnCurrentPage = Mathf.Min(Queue.QueuedVideosCount() - firstDisplayedVideo, registeredQueueItems.Length);
             for (int i = 0; i < videosOnCurrentPage; i++)
             {
@@ -73,6 +76,31 @@ namespace USharpVideoQueue.Runtime
                 registeredQueueItems[i].SetContent(description, playerName);
                 registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
             }
+        }
+
+        internal void ensureCurrentPageHasVideos()
+        {
+            bool currentPageHasVideos = firstIndexOfPage(CurrentPage) < Queue.QueuedVideosCount();
+            if (currentPageHasVideos) return;
+            if (registeredQueueItems.Length == 0 || Queue.QueuedVideosCount() == 0)
+            {
+                CurrentPage = 0;
+                return;
+            }
+
+            int lastPopulatedPage = pageOfIndex(Queue.QueuedVideosCount() - 1);
+            CurrentPage = lastPopulatedPage;
+
+        }
+
+        internal int firstIndexOfPage(int page)
+        {
+            return CurrentPage * registeredQueueItems.Length;
+        }
+
+        internal int pageOfIndex(int index)
+        {
+            return index / registeredQueueItems.Length;
         }
 
         public void OnURLInput()
