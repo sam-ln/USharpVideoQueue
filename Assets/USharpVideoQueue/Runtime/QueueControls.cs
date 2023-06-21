@@ -1,6 +1,5 @@
 ﻿using UdonSharp;
 using UnityEngine;
-using UnityEngine.Serialization;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 
@@ -16,6 +15,8 @@ namespace USharpVideoQueue.Runtime
         internal UIQueueItem[] registeredQueueItems;
         internal bool initialized = false;
         public int CurrentPage = 0;
+        public Paginator Paginator;
+        internal bool hasPaginator;
 
         internal void Start()
         {
@@ -36,6 +37,8 @@ namespace USharpVideoQueue.Runtime
             {
                 Queue.RegisterCallbackReceiver(this);
             }
+
+            hasPaginator = !(Paginator == null);
 
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
@@ -76,6 +79,7 @@ namespace USharpVideoQueue.Runtime
                 registeredQueueItems[i].SetContent(description, playerName);
                 registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
             }
+            if(hasPaginator) Paginator.OnPageNumberChanged();
         }
 
         internal void ensureCurrentPageHasVideos()
@@ -87,9 +91,7 @@ namespace USharpVideoQueue.Runtime
                 CurrentPage = 0;
                 return;
             }
-
-            int lastPopulatedPage = pageOfIndex(Queue.QueuedVideosCount() - 1);
-            CurrentPage = lastPopulatedPage;
+            CurrentPage = LastPage();
 
         }
 
@@ -101,6 +103,11 @@ namespace USharpVideoQueue.Runtime
         internal int pageOfIndex(int index)
         {
             return index / registeredQueueItems.Length;
+        }
+
+        public int LastPage()
+        {
+            return pageOfIndex(Queue.QueuedVideosCount() - 1);
         }
 
         public void OnURLInput()
@@ -147,5 +154,7 @@ namespace USharpVideoQueue.Runtime
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
             return player != null ? player.displayName : "Player not found!";
         }
+        
+        
     }
 }
