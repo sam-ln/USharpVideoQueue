@@ -12,26 +12,20 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
-
-        [FormerlySerializedAs("MaxQueueItems")]
         [Tooltip("Total limit for queued videos")]
         [SerializeField]
         internal int maxQueueItems = 8;
-        [FormerlySerializedAs("VideoLimitPerUserEnabled")]
         [Tooltip("Enforce limit per user for queued videos")]
         [SerializeField]
         [UdonSynced]
         internal bool videoLimitPerUserEnabled = false;
-        [FormerlySerializedAs("VideoLimitPerUser")]
         [Tooltip("Individual limit per user for queued videos")]
         [SerializeField]
         [UdonSynced]
         internal int videoLimitPerUser = 3;
-        [FormerlySerializedAs("PauseSecondsBetweenVideos")]
         [Tooltip("Time to wait between videos")]
         [SerializeField]
         internal int pauseSecondsBetweenVideos = 5;
-        [FormerlySerializedAs("EnableDebug")]
         [Tooltip("Should Debug messages be written to the log?")]
         [SerializeField]
         internal bool enableDebug = false;
