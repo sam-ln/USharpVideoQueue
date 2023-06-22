@@ -148,7 +148,7 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-            Queue.RequestRemoveVideo(rank);
+            Queue.RequestRemoveVideo(firstIndexOfPage(CurrentPage) + rank);
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */

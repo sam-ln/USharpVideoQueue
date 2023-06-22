@@ -764,13 +764,13 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: rank
+      Data: displayedRank
     - Name: $v
       Entry: 7
       Data: 37|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: rank
+      Data: displayedRank
     - Name: <UserType>k__BackingField
       Entry: 9
       Data: 33

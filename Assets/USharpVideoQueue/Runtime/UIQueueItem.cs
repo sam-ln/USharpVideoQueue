@@ -27,7 +27,7 @@ namespace USharpVideoQueue.Runtime
         internal bool removeEnabled;
         internal string description;
         internal string queuedBy;
-        internal string rank;
+        internal string displayedRank;
 
         internal void Start()
         {
@@ -59,7 +59,7 @@ namespace USharpVideoQueue.Runtime
 
         public void SetRank(string rank)
         {
-            this.rank = rank;
+            this.displayedRank = rank;
         }
 
         public void SetActive(bool active)
@@ -78,7 +78,7 @@ namespace USharpVideoQueue.Runtime
             if (hasRemoveButton) RemoveButton.gameObject.SetActive(removeEnabled);
             if (hasDescription) Description.text = description;
             if (hasQueuedBy) QueuedBy.text = queuedBy;
-            if (hasRank) RankText.text = rank;
+            if (hasRank) RankText.text = displayedRank;
         }
     }
 }
