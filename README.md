@@ -2,7 +2,8 @@
 
 A synced video queue asset for [MerlinVR's USharpVideo player](https://github.com/MerlinVR/USharpVideo), designed for stability and easy integration into VRChat worlds.
 
-<img src="https://github.com/sam-ln/USharpVideoQueue/assets/82455742/ea3b0a97-4f1a-47a2-9327-93e72341dec2" width=35% height=35%>
+<img src="https://github.com/sam-ln/USharpVideoQueue/assets/82455742/cc87092c-7df6-4211-934d-e5393f16539e" width=35% height=35%>
+
 
 ## Features
 
@@ -12,6 +13,7 @@ A synced video queue asset for [MerlinVR's USharpVideo player](https://github.co
 - Instance owner can moderate videos
 - Easy to integrate with permission systems
 - Allows multiple displays/controls for the same queue
+- Pagination for multiple pages of videos
 
 
 ## Setup
