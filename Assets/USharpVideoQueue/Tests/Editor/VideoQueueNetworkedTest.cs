@@ -22,8 +22,8 @@ namespace USharpVideoQueue.Tests.Editor
             MockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(2);
             queue0 = MockGroup.MockSets[0].VideoQueueMock.Object;
             queue1 = MockGroup.MockSets[1].VideoQueueMock.Object;
-            url0 = new VRCUrl("https://url.zero");
-            url1 = new VRCUrl("https://url.one");
+            url0 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             UdonSharpTestUtils.VideoQueueMockGroup mockGroup = new UdonSharpTestUtils.VideoQueueMockGroup(playerCount);
             List<VRCUrl> testUrls = new List<VRCUrl>();
-            VRCUrl initialURL = new VRCUrl("https://initial.url");
+            VRCUrl initialURL = UdonSharpTestUtils.CreateUniqueVRCUrl();
             testUrls.Add(initialURL);
 
             mockGroup.MockSets[0].VideoQueueMock.Object.QueueVideo(initialURL);
@@ -122,7 +122,7 @@ namespace USharpVideoQueue.Tests.Editor
             mockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
             for (int i = 1; i < playerCount; i++)
             {
-                VRCUrl url = new VRCUrl($"https://url.number/{i}");
+                VRCUrl url = UdonSharpTestUtils.CreateUniqueVRCUrl();
                 mockGroup.MockSets[i].VideoQueueMock.Object.QueueVideo(url);
                 testUrls.Add(url);
             }
@@ -273,7 +273,8 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void CannotQueueVideoIfUserLimitWouldBeExceeded()
         {
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.VideoLimitPerUser = 1);
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
             queue1.QueueVideo(url0);
             //Video should be queued
             Assert.AreEqual(1, queue0.QueuedVideosCount());
@@ -285,12 +286,34 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void InstanceMasterCanExceedVideoLimit()
         {
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.VideoLimitPerUser = 1);
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
             queue0.QueueVideo(url0);
             //Video should be queued
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             queue0.QueueVideo(url1);
             //Video should also be queued, although exceeding the user video limit
+            Assert.AreEqual(2, queue1.QueuedVideosCount());
+        }
+
+        [Test]
+        public void IncreasingVideoLimitPerVideo()
+        {
+            queue0.SetVideoLimitPerUserEnabled(true);
+            queue0.SetVideoLimitPerUser(1);
+            queue1.QueueVideo(url0);
+            //Video should be queued
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            queue1.QueueVideo(url1);
+            //Video should not be queued
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+
+            queue0.SetVideoLimitPerUser(2);
+            queue1.QueueVideo(url1);
+            //Video should be queued
+            Assert.AreEqual(2, queue0.QueuedVideosCount());
             Assert.AreEqual(2, queue1.QueuedVideosCount());
         }
     }

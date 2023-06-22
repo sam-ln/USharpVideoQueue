@@ -43,7 +43,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void QueueAndFinishVideo()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.SendCustomEvent("OnUSharpVideoEnd");
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
@@ -52,8 +52,8 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void QueueMultipleVideos()
         {
-            var url1 = new VRCUrl("https://url.one");
-            var url2 = new VRCUrl("https://url.two");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             queue.QueueVideo(url2);
@@ -70,7 +70,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void InvalidURLQueued()
         {
-            var invalidURL = new VRCUrl("https://invalid.url");
+            var invalidURL = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(invalidURL);
             queue.SendCustomEvent("OnUSharpVideoError");
             Assert.True(QueueArray.IsEmpty(queue.queuedVideos));
@@ -87,7 +87,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void ChangesToQueueEmitEvents()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
@@ -98,7 +98,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void VideoPlayerIsClearedAfterLastVideoIsRemoved()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             queue.RequestRemoveVideo(0);
@@ -108,7 +108,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void VideoPlayerIsClearedAfterLastVideoFinished()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             queue.OnUSharpVideoEnd();
@@ -118,7 +118,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void CanOnlyRemoveFirstVideoAfterLoadingHasFinished()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
             queue.RequestRemoveVideo(0);
@@ -133,7 +133,7 @@ namespace USharpVideoQueue.Tests.Editor
         {
             int outOfBoundsNumber = 500;
 
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             Assert.AreEqual(1, queue.QueuedVideosCount());
             Assert.AreEqual(url1, queue.GetURL(0));
@@ -143,7 +143,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void CallbacksAreEmitted()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             //queue first video
             queue.QueueVideo(url1);
             //first video starts playing
@@ -173,7 +173,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void FinalVideoEndedEmittedAfterFinalVideoFails()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             //queue first video
             queue.QueueVideo(url1);
             //video fails to play
@@ -188,7 +188,7 @@ namespace USharpVideoQueue.Tests.Editor
 
         public void LotsOfQueueingAndRemoving()
         {
-            var url1 = new VRCUrl("https://url.one");
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             int iterations = 100;
 
             for (int i = 0; i < iterations; i++)

@@ -2,6 +2,7 @@
 using System;
 using NUnit.Framework;
 using USharpVideoQueue.Runtime.Utility;
+using USharpVideoQueue.Tests.Editor.TestUtils;
 using VRC.SDKBase;
 
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
@@ -30,7 +31,7 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(EmptyReference(strArr), String.Empty);
             int[] intArr = {1};
             Assert.AreEqual(EmptyReference(intArr), -1);
-            VRCUrl[] urlArr = {new VRCUrl("https://url.one")};
+            VRCUrl[] urlArr = {UdonSharpTestUtils.CreateUniqueVRCUrl()};
             Assert.AreEqual(EmptyReference(urlArr), VRCUrl.Empty);
         }
         
@@ -61,7 +62,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void EnqueueDequeue()
         {
-            VRCUrl add = new VRCUrl("https://url.one");
+            VRCUrl add = UdonSharpTestUtils.CreateUniqueVRCUrl();
             VRCUrl[] queue = createQueue(5, 1);
             Enqueue(queue, add);
             Assert.AreEqual(queue[1], add);
@@ -74,7 +75,7 @@ namespace USharpVideoQueue.Tests.Editor
         [Test]
         public void IllegalEnqueue()
         {
-            VRCUrl add = new VRCUrl("https://url.one");
+            VRCUrl add = UdonSharpTestUtils.CreateUniqueVRCUrl();
             VRCUrl[] queue = createQueue(1, 1);
             Assert.False(Enqueue(queue, add));
         }
@@ -116,7 +117,7 @@ namespace USharpVideoQueue.Tests.Editor
             VRCUrl[] queueArray = new VRCUrl[size];
             for (int i = 0; i < members; i++)
             {
-                queueArray[i] = new VRCUrl("https://www.test.com");
+                queueArray[i] = UdonSharpTestUtils.CreateUniqueVRCUrl();
             }
             for (int j = members; j < size; j++)
             {

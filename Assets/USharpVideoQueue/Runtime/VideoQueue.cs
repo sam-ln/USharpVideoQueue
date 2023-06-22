@@ -2,6 +2,7 @@
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
+using UnityEngine.Serialization;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 using USharpVideoQueue.Runtime.Utility;
 
@@ -11,15 +12,23 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
-
         [Tooltip("Total limit for queued videos")]
-        public int MaxQueueItems = 8;
-        [Tooltip("Indiviual limit per user for queued videos")]
-        public int VideoLimitPerUser = 3;
+        [SerializeField]
+        internal int maxQueueItems = 8;
+        [Tooltip("Enforce limit per user for queued videos")]
+        [SerializeField]
+        [UdonSynced]
+        internal bool videoLimitPerUserEnabled = false;
+        [Tooltip("Individual limit per user for queued videos")]
+        [SerializeField]
+        [UdonSynced]
+        internal int videoLimitPerUser = 3;
         [Tooltip("Time to wait between videos")]
-        public int PauseSecondsBetweenVideos = 5;
+        [SerializeField]
+        internal int pauseSecondsBetweenVideos = 5;
         [Tooltip("Should Debug messages be written to the log?")]
-        public bool EnableDebug = false;
+        [SerializeField]
+        internal bool enableDebug = false;
         [Tooltip("The USharpVideoPlayer object that this queue should manage")]
         public USharpVideoPlayer VideoPlayer;
 
@@ -87,12 +96,12 @@ namespace USharpVideoQueue.Runtime
                 dataCriticalEvents[i] = string.Empty;
             }
 
-            queuedVideos = new VRCUrl[MaxQueueItems];
-            queuedByPlayer = new int[MaxQueueItems];
-            queuedTitles = new string[MaxQueueItems];
+            queuedVideos = new VRCUrl[maxQueueItems];
+            queuedByPlayer = new int[maxQueueItems];
+            queuedTitles = new string[maxQueueItems];
             VideoPlayer.RegisterCallbackReceiver(this);
 
-            for (int i = 0; i < MaxQueueItems; i++)
+            for (int i = 0; i < maxQueueItems; i++)
             {
                 queuedVideos[i] = VRCUrl.Empty;
                 queuedTitles[i] = string.Empty;
@@ -197,7 +206,7 @@ namespace USharpVideoQueue.Runtime
             WaitingForPlayback = true;
             if (isFirstVideoOwner())
             {
-                SendCustomEventDelayedSeconds(nameof(playFirst), PauseSecondsBetweenVideos);
+                SendCustomEventDelayedSeconds(nameof(playFirst), pauseSecondsBetweenVideos);
             }
         }
 
@@ -251,8 +260,8 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool IsLocalPlayerPermittedToQueueVideo()
         {
-            if (localPlayerHasElevatedRights()) return true;
-            return QueuedVideosCountByUser(localPlayerId) < VideoLimitPerUser;
+            if (localPlayerHasElevatedRights() || !videoLimitPerUserEnabled) return true;
+            return QueuedVideosCountByUser(localPlayerId) < videoLimitPerUser;
         }
 
         /// <summary>
@@ -267,6 +276,28 @@ namespace USharpVideoQueue.Runtime
             }
 
             return videoCount;
+        }
+
+        /// <summary>
+        /// Sets the queued video limit for players without elevated rights. Requires elevated rights.
+        /// </summary>
+        public void SetVideoLimitPerUser(int limit)
+        {
+            if (!localPlayerHasElevatedRights()) return;
+            ensureOwnership();
+            videoLimitPerUser = limit;
+            synchronizeData();
+        }
+
+        /// <summary>
+        /// Sets whether the limit for players without elevated rights should be enforced. Requires elevated rights.
+        /// </summary>
+        public void SetVideoLimitPerUserEnabled(bool enabled)
+        {
+            if (!localPlayerHasElevatedRights()) return;
+            ensureOwnership();
+            videoLimitPerUserEnabled = enabled;
+            synchronizeData();
         }
 
         public override void OnDeserialization()
@@ -343,7 +374,7 @@ namespace USharpVideoQueue.Runtime
 
         internal void logDebug(string message)
         {
-            if (EnableDebug) Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
+            if (enableDebug) Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
 
         internal void logWarning(string message)

@@ -11,8 +11,12 @@ namespace USharpVideoQueue.Runtime
     {
         public VideoQueue Queue;
         public VRCUrlInputField UIURLInput;
+        public bool SetPageAutomatically;
         internal UIQueueItem[] registeredQueueItems;
         internal bool initialized = false;
+        public int CurrentPage = 0;
+        public Paginator Paginator;
+        internal bool hasPaginator;
 
         internal void Start()
         {
@@ -21,16 +25,21 @@ namespace USharpVideoQueue.Runtime
 
         public void EnsureInitialized()
         {
-            if (Equals(Queue, null))
-            {
-                Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
-                return;
-            }
 
             if (initialized) return;
             initialized = true;
 
-            Queue.RegisterCallbackReceiver(this);
+            if (Equals(Queue, null))
+            {
+                Debug.LogError("Queue Controls are missing VideoQueue reference! Please check in the inspector!");
+            }
+            else
+            {
+                Queue.RegisterCallbackReceiver(this);
+            }
+
+            hasPaginator = !(Paginator == null);
+
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
         }
@@ -40,9 +49,17 @@ namespace USharpVideoQueue.Runtime
             UpdateQueueItems();
         }
 
+        public void SetCurrentPage(int currentPage)
+        {
+            this.CurrentPage = currentPage;
+            UpdateQueueItems();
+        }
+
         public void UpdateQueueItems()
         {
             Queue.EnsureInitialized();
+            
+            if(SetPageAutomatically) ensureCurrentPageHasVideos();
 
             foreach (var queueItem in registeredQueueItems)
             {
@@ -50,15 +67,47 @@ namespace USharpVideoQueue.Runtime
                 queueItem.SetActive(false);
             }
 
-            for (int i = 0; i < Mathf.Min(registeredQueueItems.Length, Queue.QueuedVideosCount()); i++)
+            int firstDisplayedVideo = firstIndexOfPage(CurrentPage);
+            int videosOnCurrentPage = Mathf.Min(Queue.QueuedVideosCount() - firstDisplayedVideo, registeredQueueItems.Length);
+            for (int i = 0; i < videosOnCurrentPage; i++)
             {
-                if (Equals(registeredQueueItems, null)) continue;
+                int videoIndex = i + firstDisplayedVideo;
+                if (Equals(registeredQueueItems[i], null)) continue;
                 registeredQueueItems[i].SetActive(true);
-                string description = Queue.GetTitle(i);
-                string playerName = getPlayerNameByID(Queue.GetVideoOwner(i));
+                string description = Queue.GetTitle(videoIndex);
+                string playerName = getPlayerNameByID(Queue.GetVideoOwner(videoIndex));
                 registeredQueueItems[i].SetContent(description, playerName);
-                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(i));
+                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
             }
+            if(hasPaginator) Paginator.OnPageNumberChanged();
+        }
+
+        internal void ensureCurrentPageHasVideos()
+        {
+            bool currentPageHasVideos = firstIndexOfPage(CurrentPage) < Queue.QueuedVideosCount();
+            if (currentPageHasVideos) return;
+            if (registeredQueueItems.Length == 0 || Queue.QueuedVideosCount() == 0)
+            {
+                CurrentPage = 0;
+                return;
+            }
+            CurrentPage = LastPage();
+
+        }
+
+        internal int firstIndexOfPage(int page)
+        {
+            return CurrentPage * registeredQueueItems.Length;
+        }
+
+        internal int pageOfIndex(int index)
+        {
+            return index / registeredQueueItems.Length;
+        }
+
+        public int LastPage()
+        {
+            return pageOfIndex(Queue.QueuedVideosCount() - 1);
         }
 
         public void OnURLInput()
@@ -76,12 +125,10 @@ namespace USharpVideoQueue.Runtime
 
         public void RegisterUIQueueItem(UIQueueItem queueItem)
         {
+            EnsureInitialized();
             //Nullcheck with Equals for testability reasons
             if (UIQueueItem.Equals(queueItem, null))
                 return;
-
-            if (registeredQueueItems == null)
-                registeredQueueItems = new UIQueueItem[0];
 
             if (queueItem.Rank >= registeredQueueItems.Length - 1)
             {
@@ -107,5 +154,7 @@ namespace USharpVideoQueue.Runtime
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
             return player != null ? player.displayName : "Player not found!";
         }
+        
+        
     }
 }

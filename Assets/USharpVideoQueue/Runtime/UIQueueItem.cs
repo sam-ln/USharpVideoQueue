@@ -22,6 +22,12 @@ namespace USharpVideoQueue.Runtime
         internal bool hasRank;
         internal bool hasRemoveButton;
 
+        //internal state for tests
+        internal bool active;
+        internal bool removeEnabled;
+        internal string description;
+        internal string queuedBy;
+
         internal void Start()
         {
             if (Equals(QueueControls, null))
@@ -44,20 +50,33 @@ namespace USharpVideoQueue.Runtime
             QueueControls.RemoveRank(Rank);
         }
 
-        public virtual void SetContent(string content, string queuedBy)
+        public void SetContent(string description, string queuedBy)
         {
-            if (hasDescription) Description.text = content;
-            if (hasQueuedBy) QueuedBy.text = queuedBy;
+            this.description = description;
+            this.queuedBy = queuedBy;
+            updateGameObjects();
+
         }
 
-        public virtual void SetActive(bool active)
+        public void SetActive(bool active)
+        {
+            this.active = active;
+            updateGameObjects();
+
+        }
+
+        public void SetRemoveEnabled(bool removeEnabled)
+        {
+            this.removeEnabled = removeEnabled;
+            updateGameObjects();
+        }
+
+        internal virtual void updateGameObjects()
         {
             gameObject.SetActive(active);
-        }
-
-        public virtual void SetRemoveEnabled(bool enabled)
-        {
-            if (hasRemoveButton) RemoveButton.gameObject.SetActive(enabled);
+            if (hasRemoveButton) RemoveButton.gameObject.SetActive(removeEnabled);
+            if (hasDescription) Description.text = description;
+            if (hasQueuedBy) QueuedBy.text = queuedBy;
         }
     }
 }
