@@ -18,7 +18,7 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
-        public void OnPageNumberChanged()
+        public void UpdatePageNumber()
         {
             PageDisplay.text = $"Page {QueueControls.CurrentPage + 1} of {QueueControls.LastPage() + 1}";
         }

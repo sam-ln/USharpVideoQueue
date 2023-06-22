@@ -58,13 +58,14 @@ namespace USharpVideoQueue.Runtime
         public void UpdateQueueItems()
         {
             Queue.EnsureInitialized();
-            
-            if(SetPageAutomatically) ensureCurrentPageHasVideos();
+
+            if (SetPageAutomatically) ensureCurrentPageHasVideos();
 
             foreach (var queueItem in registeredQueueItems)
             {
                 if (Equals(queueItem, null)) continue;
                 queueItem.SetActive(false);
+                queueItem.UpdateGameObjects();
             }
 
             int firstDisplayedVideo = firstIndexOfPage(CurrentPage);
@@ -76,10 +77,13 @@ namespace USharpVideoQueue.Runtime
                 registeredQueueItems[i].SetActive(true);
                 string description = Queue.GetTitle(videoIndex);
                 string playerName = getPlayerNameByID(Queue.GetVideoOwner(videoIndex));
+                string rank = (firstIndexOfPage(CurrentPage) + i + 1).ToString();
                 registeredQueueItems[i].SetContent(description, playerName);
                 registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
+                registeredQueueItems[i].SetRank(rank);
+                registeredQueueItems[i].UpdateGameObjects();
             }
-            if(hasPaginator) Paginator.OnPageNumberChanged();
+            if (hasPaginator) Paginator.UpdatePageNumber();
         }
 
         internal void ensureCurrentPageHasVideos()
@@ -154,7 +158,7 @@ namespace USharpVideoQueue.Runtime
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
             return player != null ? player.displayName : "Player not found!";
         }
-        
-        
+
+
     }
 }

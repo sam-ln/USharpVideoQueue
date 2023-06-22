@@ -111,7 +111,7 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(true, queueItems[0].Object.active);
             Assert.AreEqual(false, queueItems[1].Object.active);
         }
-        
+
         [Test]
         public void ShowingPreviousPageIfCurrentPageBecomesEmpty()
         {
@@ -123,15 +123,15 @@ namespace USharpVideoQueue.Tests.Editor
             }
             controls.SetCurrentPage(1);
             Assert.AreEqual(1, controls.CurrentPage);
-            
+
             // one video plays through and is removed
             queue0.OnUSharpVideoLoadStart();
             queue0.OnUSharpVideoPlay();
             queue0.OnUSharpVideoEnd();
-            
+
             Assert.AreEqual(0, controls.CurrentPage);
         }
-        
+
         public void RemovingLastVideo()
         {
             controls.SetPageAutomatically = true;
@@ -141,12 +141,12 @@ namespace USharpVideoQueue.Tests.Editor
                 queue0.QueueVideo(UdonSharpTestUtils.CreateUniqueVRCUrl());
             }
             Assert.AreEqual(0, controls.CurrentPage);
-            
+
             // last video plays through and is removed
             queue0.OnUSharpVideoLoadStart();
             queue0.OnUSharpVideoPlay();
             queue0.OnUSharpVideoEnd();
-            
+
             Assert.AreEqual(0, controls.CurrentPage);
         }
 
@@ -159,7 +159,7 @@ namespace USharpVideoQueue.Tests.Editor
                 queueItem.Object.Rank = i;
                 queueItem.Object.QueueControls = queueControls;
                 queueItem.Object.Start();
-                queueItem.Setup(item => item.updateGameObjects());
+                queueItem.Setup(item => item.UpdateGameObjects());
                 queueItems[i] = queueItem;
             }
 
