@@ -1,4 +1,5 @@
 ﻿using UdonSharp;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace USharpVideoQueue.Runtime
@@ -8,6 +9,14 @@ namespace USharpVideoQueue.Runtime
 
         public QueueControls QueueControls;
         public Text PageDisplay;
+
+        void Start()
+        {
+            if (QueueControls == null)
+            {
+                Debug.LogError("Paginator is missing QueueControls Reference!");
+            }
+        }
 
         public void OnPageNumberChanged()
         {
@@ -25,6 +34,6 @@ namespace USharpVideoQueue.Runtime
             if (QueueControls.CurrentPage == 0) return;
             QueueControls.SetCurrentPage(QueueControls.CurrentPage - 1);
         }
-       
+
     }
 }
