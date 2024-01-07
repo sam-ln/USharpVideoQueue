@@ -67,6 +67,15 @@ namespace USharpVideoQueue.Tests.Editor.TestUtilsTest
             }
            
         }
+
+        [Test]
+        public void RemovePlayer()
+        {
+            int removedPlayer = MockGroup.MockSets[0].PlayerId;
+            Assert.AreEqual(true,queue2.isPlayerWithIDValid(removedPlayer));
+            MockGroup.SimulatePlayerLeft(removedPlayer);
+            Assert.AreEqual(false,queue2.isPlayerWithIDValid(removedPlayer));
+        }
         
         
     }

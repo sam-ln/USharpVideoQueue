@@ -168,6 +168,8 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                     mockSet.VideoQueueMock.Setup(queue => queue.isVideoPlayerOwner())
                         .Returns(() => ObjectOwners[USharpVideoObjectName].Equals(mockSet));
                     mockSet.VideoQueueMock.Setup(queue => queue.isMaster()).Returns(() => mockSet.Equals(Master));
+                    mockSet.VideoQueueMock.Setup(queue => queue.isPlayerWithIDValid(It.IsAny<int>()))
+                        .Returns((int id) => MockSets.Exists(set => set.PlayerId == id));
                     mockSet.VideoPlayerMock.Setup(player => player.PlayVideo(It.IsAny<VRCUrl>()))
                         .Callback(() => ObjectOwners[USharpVideoObjectName] = mockSet);
                 }
@@ -181,6 +183,27 @@ namespace USharpVideoQueue.Tests.Editor.TestUtils
                 }
 
                 return -1;
+            }
+
+            public void SimulatePlayerLeft(int playerID)
+            {
+                VideoQueueMockSet removedPlayer = MockSets.Find(set => set.PlayerId == playerID);
+                if (removedPlayer == null)
+                {
+                    Debug.LogWarning("Player to be removed doesn't exist!");
+                    return;
+                }
+                MockSets.Remove(removedPlayer);
+                Debug.Log($"Player was removed. New Player count: {MockSets.Count}");
+                if (Master == removedPlayer)
+                {
+                    Master = MockSets[0];
+                    Debug.Log($"New master is {MockSets[0].PlayerId}");
+                }
+                foreach (var mockSet in MockSets)
+                {
+                    mockSet.VideoQueueMock.Object.OnPlayerLeft(removedPlayer.Player);
+                }
             }
         }
     }

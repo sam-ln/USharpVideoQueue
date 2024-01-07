@@ -356,6 +356,17 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.TakeOwnership();
             VideoPlayer.StopVideo();
         }
+        
+        internal void clearVideosOfPlayersWhoLeft()
+        {
+            for (int i = Count(queuedVideos) - 1; i >= 0; i--)
+            {
+                if (!isPlayerWithIDValid(GetVideoOwner(i)))
+                {
+                    removeVideo(i);
+                }
+            }
+        }
 
         /// <summary>
         /// Override this function to integrate with other permission systems!
@@ -396,6 +407,8 @@ namespace USharpVideoQueue.Runtime
         internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
         internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
 
+        internal virtual bool isPlayerWithIDValid(int id) => Utilities.IsValid(VRCPlayerApi.GetPlayerById(id));
+
         internal virtual bool isVideoPlayerOwner() =>
             Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
 
@@ -408,17 +421,7 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if (!isOwner()) return;
-
-            //Remove all videos queued by player who left
-            int playerId = getPlayerID(player);
-            for (int i = Count(queuedVideos) - 1; i >= 0; i--)
-            {
-                if (queuedByPlayer[i] == playerId)
-                {
-                    removeVideo(i);
-                }
-            }
+            if(isMaster()) clearVideosOfPlayersWhoLeft();
         }
 
         /* USharpVideoQueue Emitted Callbacks */
