@@ -525,6 +525,7 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
+        [RecursiveMethod]
         internal virtual void SendCallback(string callbackName)
         {
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
@@ -555,6 +556,7 @@ namespace USharpVideoQueue.Runtime
             logDebug($"Queued Data Critical Function Event with content '{formattedEvent}'");
         }
 
+        [RecursiveMethod]
         internal virtual void invokePendingEvents()
         {
             var latestEventTimestamp = eventTimestampThreshold;
