@@ -357,11 +357,14 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.StopVideo();
         }
         
-        internal void clearVideosOfPlayersWhoLeft()
+        internal void clearVideosOfPlayerWhoLeft(int leftPlayerID)
         {
             for (int i = Count(queuedVideos) - 1; i >= 0; i--)
             {
-                if (!isPlayerWithIDValid(GetVideoOwner(i)))
+                int videoOwnerPlayerID = GetVideoOwner(i);
+                //VRChat is inconsistent with the VRCPlayerApi objects of players who just left (sometimes valid, sometimes null)
+                //This why we check against both the validity of the video owner VRCPlayerApi object and their ID.
+                if (videoOwnerPlayerID == leftPlayerID || !isPlayerWithIDValid(videoOwnerPlayerID))
                 {
                     removeVideo(i);
                 }
@@ -421,7 +424,7 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if(isMaster()) clearVideosOfPlayersWhoLeft();
+            if(isMaster()) clearVideosOfPlayerWhoLeft(getPlayerID(player));
         }
 
         /* USharpVideoQueue Emitted Callbacks */
