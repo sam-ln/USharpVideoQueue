@@ -146,11 +146,14 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
-        public void RequestMoveVideo(int fromIndex, int toIndex)
+        public void RequestMoveVideo(int index, bool directionUp)
         {
-            if (!IsLocalPlayerPermittedToMoveVideo()) return;
-            
-            
+  
+            if (!IsLocalPlayerAbleToMoveVideo(index, directionUp)) return;
+            ensureOwnership();
+            if(directionUp) moveUpVideoData(index);
+            else moveDownVideoData(index);
+            invokeEventsAndSynchronize();
         }
         
 
@@ -163,14 +166,13 @@ namespace USharpVideoQueue.Runtime
         {
             //Check if user is allowed to remove video
             if (!IsLocalPlayerPermittedToRemoveVideo(index)) return;
-
             if (index != 0)
             {
                 removeVideo(index);
                 return;
             }
 
-            // video with index 0 is only allowed to be removed when it is currently loading to prevent player inconsitencies.
+            // video with index 0 is only allowed to be removed when it is not currently loading to prevent video player inconsistencies.
             if (!WaitingForPlayback) skipToNextVideo();
 
         }
@@ -262,11 +264,22 @@ namespace USharpVideoQueue.Runtime
         }
         
         /// <summary>
-        /// Returns whether the local player is permitted to move any video up or down in the queue.
+        /// Returns whether the local player is permitted and able to move video with index up or down in the queue.
         /// </summary>
-        public bool IsLocalPlayerPermittedToMoveVideo()
+        public bool IsLocalPlayerAbleToMoveVideo(int index, bool directionUp)
         {
-            return localPlayerHasElevatedRights();
+            if (!localPlayerHasElevatedRights()) return false;
+            
+            // Index constrains moving upwards
+            if (directionUp && (index > QueuedVideosCount() - 1 || index <= 0)) return false;
+            
+            //Index constrains moving downwards
+            if (!directionUp && (index >= QueuedVideosCount() - 1 || index < 0)) return false;
+            
+            //Prevent moving the playing video
+            if (directionUp && index == 1 || !directionUp && index == 0) return false;
+            
+            return true;
         }
 
         /// <summary>
@@ -342,6 +355,22 @@ namespace USharpVideoQueue.Runtime
             Remove(queuedVideos, index);
             Remove(queuedTitles, index);
             Remove(queuedByPlayer, index);
+            OnQueueContentChange();
+        }
+
+        internal void moveUpVideoData(int index)
+        {
+            MoveUp(queuedVideos, index);
+            MoveUp(queuedTitles, index);
+            MoveUp(queuedByPlayer, index);
+            OnQueueContentChange();
+        }
+        
+        internal void moveDownVideoData(int index)
+        {
+            MoveDown(queuedVideos, index);
+            MoveDown(queuedTitles, index);
+            MoveDown(queuedByPlayer, index);
             OnQueueContentChange();
         }
 

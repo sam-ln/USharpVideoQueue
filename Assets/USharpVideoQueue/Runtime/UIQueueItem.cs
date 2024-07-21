@@ -1,11 +1,9 @@
-﻿
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace USharpVideoQueue.Runtime
 {
-
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [DefaultExecutionOrder(-1)]
     public class UIQueueItem : UdonSharpBehaviour
@@ -14,6 +12,8 @@ namespace USharpVideoQueue.Runtime
         public Text QueuedBy;
         public Text RankText;
         public Button RemoveButton;
+        public Button UpButton;
+        public Button DownButton;
         public int Rank;
         public QueueControls QueueControls;
 
@@ -21,10 +21,14 @@ namespace USharpVideoQueue.Runtime
         internal bool hasQueuedBy;
         internal bool hasRank;
         internal bool hasRemoveButton;
+        internal bool hasUpButton;
+        internal bool hasDownButton;
 
         //internal state for tests
         internal bool active;
         internal bool removeEnabled;
+        internal bool upEnabled;
+        internal bool downEnabled;
         internal string description;
         internal string queuedBy;
         internal string displayedRank;
@@ -41,6 +45,8 @@ namespace USharpVideoQueue.Runtime
             hasQueuedBy = QueuedBy != null;
             hasRank = RankText != null;
             hasRemoveButton = RemoveButton != null;
+            hasUpButton = UpButton != null;
+            hasDownButton = DownButton != null;
 
             QueueControls.RegisterUIQueueItem(this);
             if (hasRank) RankText.text = $"{Rank + 1}";
@@ -49,6 +55,16 @@ namespace USharpVideoQueue.Runtime
         public void OnRemovePressed()
         {
             QueueControls.RemoveRank(Rank);
+        }
+
+        public void OnUpPressed()
+        {
+            QueueControls.MoveUpRank(Rank);
+        }
+
+        public void OnDownPressed()
+        {
+            QueueControls.MoveDownRank(Rank);
         }
 
         public void SetContent(string description, string queuedBy)
@@ -72,10 +88,22 @@ namespace USharpVideoQueue.Runtime
             this.removeEnabled = removeEnabled;
         }
 
+        public void SetUpEnabled(bool upEnabled)
+        {
+            this.upEnabled = upEnabled;
+        }
+        
+        public void SetDownEnabled(bool downEnabled)
+        {
+            this.downEnabled = downEnabled;
+        }
+
         public virtual void UpdateGameObjects()
         {
             gameObject.SetActive(active);
             if (hasRemoveButton) RemoveButton.gameObject.SetActive(removeEnabled);
+            if (hasUpButton) UpButton.gameObject.SetActive(upEnabled);
+            if (hasDownButton) DownButton.gameObject.SetActive(downEnabled);
             if (hasDescription) Description.text = description;
             if (hasQueuedBy) QueuedBy.text = queuedBy;
             if (hasRank) RankText.text = displayedRank;

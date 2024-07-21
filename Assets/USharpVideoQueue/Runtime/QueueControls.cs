@@ -25,7 +25,6 @@ namespace USharpVideoQueue.Runtime
 
         public void EnsureInitialized()
         {
-
             if (initialized) return;
             initialized = true;
 
@@ -69,7 +68,8 @@ namespace USharpVideoQueue.Runtime
             }
 
             int firstDisplayedVideo = firstIndexOfPage(CurrentPage);
-            int videosOnCurrentPage = Mathf.Min(Queue.QueuedVideosCount() - firstDisplayedVideo, registeredQueueItems.Length);
+            int videosOnCurrentPage =
+                Mathf.Min(Queue.QueuedVideosCount() - firstDisplayedVideo, registeredQueueItems.Length);
             for (int i = 0; i < videosOnCurrentPage; i++)
             {
                 int videoIndex = i + firstDisplayedVideo;
@@ -80,9 +80,12 @@ namespace USharpVideoQueue.Runtime
                 string rank = (firstIndexOfPage(CurrentPage) + i + 1).ToString();
                 registeredQueueItems[i].SetContent(description, playerName);
                 registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
+                registeredQueueItems[i].SetUpEnabled(Queue.IsLocalPlayerAbleToMoveVideo(videoIndex, true));
+                registeredQueueItems[i].SetDownEnabled(Queue.IsLocalPlayerAbleToMoveVideo(videoIndex, false));
                 registeredQueueItems[i].SetRank(rank);
                 registeredQueueItems[i].UpdateGameObjects();
             }
+
             if (hasPaginator) Paginator.UpdatePageNumber();
         }
 
@@ -95,8 +98,8 @@ namespace USharpVideoQueue.Runtime
                 CurrentPage = 0;
                 return;
             }
-            CurrentPage = LastPage();
 
+            CurrentPage = LastPage();
         }
 
         internal int firstIndexOfPage(int page)
@@ -151,6 +154,16 @@ namespace USharpVideoQueue.Runtime
             Queue.RequestRemoveVideo(firstIndexOfPage(CurrentPage) + rank);
         }
 
+        public void MoveUpRank(int rank)
+        {
+            Queue.RequestMoveVideo(firstIndexOfPage(CurrentPage) + rank, true);
+        }
+
+        public void MoveDownRank(int rank)
+        {
+            Queue.RequestMoveVideo(firstIndexOfPage(CurrentPage) + rank, false);
+        }
+
         /* VRC SDK wrapper functions to enable mocking for tests */
 
         internal virtual string getPlayerNameByID(int id)
@@ -158,7 +171,5 @@ namespace USharpVideoQueue.Runtime
             VRCPlayerApi player = VRCPlayerApi.GetPlayerById(id);
             return player != null ? player.displayName : "Player not found!";
         }
-
-
     }
 }
