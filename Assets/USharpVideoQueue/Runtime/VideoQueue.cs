@@ -146,6 +146,13 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
+        public void RequestMoveVideo(int fromIndex, int toIndex)
+        {
+            if (!IsLocalPlayerPermittedToMoveVideo()) return;
+            
+            
+        }
+        
 
         /// <summary>
         /// Removes the video at [index] from the queue if the user has permission to do so. 
@@ -252,6 +259,14 @@ namespace USharpVideoQueue.Runtime
         {
             if (localPlayerHasElevatedRights()) return true;
             return GetVideoOwner(index) == localPlayerId;
+        }
+        
+        /// <summary>
+        /// Returns whether the local player is permitted to move any video up or down in the queue.
+        /// </summary>
+        public bool IsLocalPlayerPermittedToMoveVideo()
+        {
+            return localPlayerHasElevatedRights();
         }
 
         /// <summary>
