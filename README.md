@@ -20,9 +20,8 @@ A synced video queue asset for [MerlinVR's USharpVideo player](https://github.co
 
 ### Requirements
 
-- Latest VRCSDK
-- Latest release of UdonSharp
-- USharpVideo v.1.0.1 (Using v.1.0.0 will cause problems due to unfixed bugs)
+- Latest version of VRChat SDK and UdonSharp (installed via [Creator Companion](https://vcc.docs.vrchat.com/))
+- [USharpVideo v.1.0.1](https://github.com/MerlinVR/USharpVideo/releases/tag/v1.0.1)
 
 ### Adding to Scene
 
