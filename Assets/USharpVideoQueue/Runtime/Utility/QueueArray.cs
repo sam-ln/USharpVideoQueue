@@ -98,6 +98,14 @@ namespace USharpVideoQueue.Runtime.Utility
             queue.SetValue(EmptyReference(queue), 0);
         }
 
+        public static void Clear(Array queue)
+        {
+            for (int i = 0; i < queue.Length-1; i++)
+            {
+                queue.SetValue(EmptyReference(queue), i);
+            }
+        }
+
 
     }
 }

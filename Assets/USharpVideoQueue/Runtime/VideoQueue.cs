@@ -146,6 +146,22 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
+        /// <summary>
+        /// Removes all entries from the queue and stops the playing video.
+        /// </summary>
+        public void Clear()
+        {
+            if(!localPlayerHasElevatedRights()) return;
+            
+            ensureOwnership();
+            QueueArray.Clear(queuedVideos);
+            QueueArray.Clear(queuedTitles);
+            QueueArray.Clear(queuedByPlayer);
+            invokeEventsAndSynchronize();
+            clearVideoPlayer();
+            OnQueueContentChange();
+        }
+
         public void RequestMoveVideo(int index, bool directionUp)
         {
   
