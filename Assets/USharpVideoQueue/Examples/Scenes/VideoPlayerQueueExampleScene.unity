@@ -4920,6 +4920,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5566367984821696594, guid: c7f0154e9af2ff24ca0cc64da9609f94,
         type: 3}
+    - target: {fileID: 7539731111554126671, guid: c7f0154e9af2ff24ca0cc64da9609f94,
+        type: 3}
+      propertyPath: _syncMethod
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7849462701292955455, guid: c7f0154e9af2ff24ca0cc64da9609f94,
         type: 3}
       propertyPath: m_Name
@@ -12744,6 +12749,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5129190173838123386, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5506882833496539433, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
         type: 3}

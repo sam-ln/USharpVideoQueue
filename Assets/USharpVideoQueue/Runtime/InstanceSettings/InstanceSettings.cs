@@ -12,8 +12,6 @@ namespace USharpVideoQueue.Runtime.InstanceSettings
         [SerializeField] private VideoQueue _videoQueue;
 
         [SerializeField] private Text _videoLimitText;
-        [SerializeField] private Text _urlInputFieldText;
-        [SerializeField] private VRCUrlInputField _urlInputField;
 
         [UdonSynced] private int videoLimit = 2;
 
@@ -26,14 +24,12 @@ namespace USharpVideoQueue.Runtime.InstanceSettings
 
         public void _EnableCustomURLs()
         {
-            _urlInputFieldText.text = "Enter Video URL...";
-            _urlInputField.readOnly = false;
+            _videoQueue.SetCustomUrlInputEnabled(true);
         }
 
         public void _DisableCustomURLs()
         {
-            _urlInputFieldText.text = "URL Input is disabled!";
-            _urlInputField.readOnly = true;
+            _videoQueue.SetCustomUrlInputEnabled(false);
         }
 
         public void _EnableVideoLimit()

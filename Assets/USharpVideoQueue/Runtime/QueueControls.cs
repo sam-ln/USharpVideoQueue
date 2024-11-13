@@ -1,5 +1,6 @@
 ﻿using UdonSharp;
 using UnityEngine;
+using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 
@@ -11,6 +12,7 @@ namespace USharpVideoQueue.Runtime
     {
         public VideoQueue Queue;
         public VRCUrlInputField UIURLInput;
+        public Text UIURLInputText;
         public bool SetPageAutomatically;
         internal UIQueueItem[] registeredQueueItems;
         internal bool initialized = false;
@@ -46,12 +48,22 @@ namespace USharpVideoQueue.Runtime
         public void OnUSharpVideoQueueContentChange()
         {
             UpdateQueueItems();
+            UpdateURLInputField();
         }
 
         public void SetCurrentPage(int currentPage)
         {
             this.CurrentPage = currentPage;
             UpdateQueueItems();
+        }
+
+        public void UpdateURLInputField()
+        {
+            Queue.EnsureInitialized();
+            bool customUrlsEnabled = Queue.customUrlInputEnabled;
+
+            UIURLInputText.text = customUrlsEnabled ? "Enter Video URL..." : "URL input disabled!";
+            UIURLInput.readOnly= !customUrlsEnabled;
         }
 
         public void UpdateQueueItems()
