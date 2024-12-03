@@ -1,13 +1,12 @@
 using System.Collections.Generic;
+using Moq;
 using NUnit.Framework;
 using USharpVideoQueue.Runtime;
-using VRC.SDKBase;
-using Moq;
-using UnityEditor.VersionControl;
 using USharpVideoQueue.Runtime.Utility;
-using USharpVideoQueue.Tests.Editor.TestUtils;
+using USharpVideoQueue.Tests.Runtime.TestUtils;
+using VRC.SDKBase;
 
-namespace USharpVideoQueue.Tests.Editor
+namespace USharpVideoQueue.Tests.Runtime
 {
     public class VideoQueueNetworkedTest
     {

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Moq;
 using UdonSharp;
@@ -6,10 +8,8 @@ using UdonSharp.Video;
 using UnityEngine;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace USharpVideoQueue.Tests.Editor.TestUtils
+namespace USharpVideoQueue.Tests.Runtime.TestUtils
 {
     public static class UdonSharpTestUtils
     {

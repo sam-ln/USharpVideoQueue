@@ -1,13 +1,13 @@
+using Moq;
 using NUnit.Framework;
 using UnityEngine;
 using USharpVideoQueue.Runtime;
-using Moq;
-using USharpVideoQueue.Tests.Editor.TestUtils;
+using USharpVideoQueue.Tests.Runtime.TestUtils;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
-namespace USharpVideoQueue.Tests.Editor
+namespace USharpVideoQueue.Tests.Runtime
 {
     public class QueueControlsTest
     {

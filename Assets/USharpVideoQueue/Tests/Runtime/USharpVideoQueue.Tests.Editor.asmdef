@@ -1,5 +1,6 @@
 {
-    "name": "USharpVideoQueue.Tests.Editor",
+    "name": "USharpVideoQueue.Tests.Runtime",
+    "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",

@@ -1,11 +1,11 @@
 ﻿using System;
 using NUnit.Framework;
 using USharpVideoQueue.Runtime.Utility;
-using USharpVideoQueue.Tests.Editor.TestUtils;
+using USharpVideoQueue.Tests.Runtime.TestUtils;
 using VRC.SDKBase;
 using static USharpVideoQueue.Runtime.Utility.QueueArray;
 
-namespace USharpVideoQueue.Tests.Editor
+namespace USharpVideoQueue.Tests.Runtime
 {
     public class QueueUtilsTest
     {

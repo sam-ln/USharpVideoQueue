@@ -1,8 +1,8 @@
 using NUnit.Framework;
 using USharpVideoQueue.Runtime;
-using USharpVideoQueue.Tests.Editor.TestUtils;
+using USharpVideoQueue.Tests.Runtime.TestUtils;
 
-namespace USharpVideoQueue.Tests.Editor.TestUtilsTest
+namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
 {
     public class MockGroupTest
     {

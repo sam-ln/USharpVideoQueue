@@ -1,7 +1,7 @@
 
 using UdonSharp;
 
-namespace USharpVideoQueue.Tests.Editor.TestUtils
+namespace USharpVideoQueue.Tests.Runtime.TestUtils
 {
     public abstract class VideoQueueEventReceiver : UdonSharpBehaviour
     {
