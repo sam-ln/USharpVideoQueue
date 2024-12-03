@@ -1,8 +1,10 @@
 {
     "name": "USharpVideoQueue.Runtime",
+    "rootNamespace": "",
     "references": [
         "GUID:99835874ee819da44948776e0df4ff1d",
-        "GUID:d136a96bdd9788b46941e8723688518d"
+        "GUID:d136a96bdd9788b46941e8723688518d",
+        "GUID:3c1bc1267eab5884ebe7f232c09ee0d9"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

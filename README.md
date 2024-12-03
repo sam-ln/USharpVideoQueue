@@ -2,7 +2,8 @@
 
 A synced video queue asset for [MerlinVR's USharpVideo player](https://github.com/MerlinVR/USharpVideo), designed for stability and easy integration into VRChat worlds.
 
-<img src="https://github.com/sam-ln/USharpVideoQueue/assets/82455742/52590ed0-72a8-4ffb-80e3-1effb0e063a4" width=35% height=35%>
+<img src="https://github.com/user-attachments/assets/c28d27b8-d57f-4c74-aed3-2ace86501ad7" width=35% height=35%> 
+<img src="https://github.com/user-attachments/assets/50ee3b2d-e47f-4a07-9bfa-3f4f105f168b" width=35% height=35%>
 
 
 ## Features
@@ -10,7 +11,7 @@ A synced video queue asset for [MerlinVR's USharpVideo player](https://github.co
 - Synced video queue for large instances
 - Entering new videos via URL field or U# interface
 - Set a limit for queued videos per user
-- Instance owner can moderate videos
+- Instance owner can remove videos and change queue positions
 - Easy to integrate with permission systems
 - Allows multiple displays/controls for the same queue
 - Pagination for multiple pages of videos
@@ -20,9 +21,8 @@ A synced video queue asset for [MerlinVR's USharpVideo player](https://github.co
 
 ### Requirements
 
-- Latest VRCSDK
-- Latest release of UdonSharp
-- USharpVideo v.1.0.1 (Using v.1.0.0 will cause problems due to unfixed bugs)
+- Latest version of VRChat SDK and UdonSharp (installed via [Creator Companion](https://vcc.docs.vrchat.com/))
+- [USharpVideo v.1.0.1](https://github.com/MerlinVR/USharpVideo/releases/tag/v1.0.1)
 
 ### Adding to Scene
 

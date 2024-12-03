@@ -12,23 +12,24 @@ namespace USharpVideoQueue.Runtime
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
     {
-        [Tooltip("Total limit for queued videos")]
-        [SerializeField]
+        [Tooltip("Total limit for queued videos")] [SerializeField]
         internal int maxQueueItems = 8;
-        [Tooltip("Enforce limit per user for queued videos")]
-        [SerializeField]
-        [UdonSynced]
+
+        [Tooltip("Enforce limit per user for queued videos")] [SerializeField] [UdonSynced]
         internal bool videoLimitPerUserEnabled = false;
-        [Tooltip("Individual limit per user for queued videos")]
-        [SerializeField]
-        [UdonSynced]
+
+        [Tooltip("Allow users to enter custom urls")] [SerializeField] [UdonSynced]
+        internal bool customUrlInputEnabled = false;
+
+        [Tooltip("Individual limit per user for queued videos")] [SerializeField] [UdonSynced]
         internal int videoLimitPerUser = 3;
-        [Tooltip("Time to wait between videos")]
-        [SerializeField]
+
+        [Tooltip("Time to wait between videos")] [SerializeField]
         internal int pauseSecondsBetweenVideos = 5;
-        [Tooltip("Should Debug messages be written to the log?")]
-        [SerializeField]
+
+        [Tooltip("Should Debug messages be written to the log?")] [SerializeField]
         internal bool enableDebug = false;
+
         [Tooltip("The USharpVideoPlayer object that this queue should manage")]
         public USharpVideoPlayer VideoPlayer;
 
@@ -146,6 +147,31 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) playFirst();
         }
 
+        /// <summary>
+        /// Removes all entries from the queue and stops the playing video.
+        /// </summary>
+        public void Clear()
+        {
+            if (!localPlayerHasElevatedRights()) return;
+
+            ensureOwnership();
+            QueueArray.Clear(queuedVideos);
+            QueueArray.Clear(queuedTitles);
+            QueueArray.Clear(queuedByPlayer);
+            invokeEventsAndSynchronize();
+            clearVideoPlayer();
+            OnQueueContentChange();
+        }
+
+        public void RequestMoveVideo(int index, bool directionUp)
+        {
+            if (!IsLocalPlayerAbleToMoveVideo(index, directionUp)) return;
+            ensureOwnership();
+            if (directionUp) moveUpVideoData(index);
+            else moveDownVideoData(index);
+            invokeEventsAndSynchronize();
+        }
+
 
         /// <summary>
         /// Removes the video at [index] from the queue if the user has permission to do so. 
@@ -156,16 +182,14 @@ namespace USharpVideoQueue.Runtime
         {
             //Check if user is allowed to remove video
             if (!IsLocalPlayerPermittedToRemoveVideo(index)) return;
-
             if (index != 0)
             {
                 removeVideo(index);
                 return;
             }
 
-            // video with index 0 is only allowed to be removed when it is currently loading to prevent player inconsitencies.
+            // video with index 0 is only allowed to be removed when it is not currently loading to prevent video player inconsistencies.
             if (!WaitingForPlayback) skipToNextVideo();
-
         }
 
         internal void removeVideo(int index)
@@ -175,6 +199,7 @@ namespace USharpVideoQueue.Runtime
                 skipToNextVideo();
                 return;
             }
+
             ensureOwnership();
             removeVideoData(index);
             invokeEventsAndSynchronize();
@@ -226,6 +251,7 @@ namespace USharpVideoQueue.Runtime
             if (!isIndexValid(index)) return VRCUrl.Empty;
             return queuedVideos[index];
         }
+
         /// <summary>
         /// Returns the title of the video currently queued at [index]. Returns an empty string if [index] is not valid. 
         /// </summary>
@@ -252,6 +278,25 @@ namespace USharpVideoQueue.Runtime
         {
             if (localPlayerHasElevatedRights()) return true;
             return GetVideoOwner(index) == localPlayerId;
+        }
+
+        /// <summary>
+        /// Returns whether the local player is permitted and able to move video with index up or down in the queue.
+        /// </summary>
+        public bool IsLocalPlayerAbleToMoveVideo(int index, bool directionUp)
+        {
+            if (!localPlayerHasElevatedRights()) return false;
+
+            // Index constrains moving upwards
+            if (directionUp && (index > QueuedVideosCount() - 1 || index <= 0)) return false;
+
+            //Index constrains moving downwards
+            if (!directionUp && (index >= QueuedVideosCount() - 1 || index < 0)) return false;
+
+            //Prevent moving the playing video
+            if (directionUp && index == 1 || !directionUp && index == 0) return false;
+
+            return true;
         }
 
         /// <summary>
@@ -299,6 +344,18 @@ namespace USharpVideoQueue.Runtime
             videoLimitPerUserEnabled = enabled;
             synchronizeData();
         }
+        
+        /// <summary>
+        /// Sets whether players can enter videos by entering custom urls. Requires elevated rights.
+        /// </summary>
+        public void SetCustomUrlInputEnabled(bool enabled)
+        {
+            if (!localPlayerHasElevatedRights()) return;
+            ensureOwnership();
+            customUrlInputEnabled = enabled;
+            synchronizeData();
+            OnQueueContentChange();
+        }
 
         public override void OnDeserialization()
         {
@@ -330,6 +387,22 @@ namespace USharpVideoQueue.Runtime
             OnQueueContentChange();
         }
 
+        internal void moveUpVideoData(int index)
+        {
+            MoveUp(queuedVideos, index);
+            MoveUp(queuedTitles, index);
+            MoveUp(queuedByPlayer, index);
+            OnQueueContentChange();
+        }
+
+        internal void moveDownVideoData(int index)
+        {
+            MoveDown(queuedVideos, index);
+            MoveDown(queuedTitles, index);
+            MoveDown(queuedByPlayer, index);
+            OnQueueContentChange();
+        }
+
         internal void invokeEventsAndSynchronize()
         {
             Debug.Assert(isOwner());
@@ -356,7 +429,7 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.TakeOwnership();
             VideoPlayer.StopVideo();
         }
-        
+
         internal void clearVideosOfPlayerWhoLeft(int leftPlayerID)
         {
             for (int i = Count(queuedVideos) - 1; i >= 0; i--)
@@ -424,7 +497,7 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if(isMaster()) clearVideosOfPlayerWhoLeft(getPlayerID(player));
+            if (isMaster()) clearVideosOfPlayerWhoLeft(getPlayerID(player));
         }
 
         /* USharpVideoQueue Emitted Callbacks */

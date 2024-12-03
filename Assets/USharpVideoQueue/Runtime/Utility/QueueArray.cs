@@ -73,6 +73,22 @@ namespace USharpVideoQueue.Runtime.Utility
             queue.SetValue(EmptyReference(queue), queue.Length-1);
         }
 
+        public static void MoveUp(Array queue, int index)
+        {
+            if (index <= 0 || index >= queue.Length) return;
+            object swap = queue.GetValue(index - 1);
+            queue.SetValue(queue.GetValue(index), index-1);
+            queue.SetValue(swap, index);
+        }
+        
+        public static void MoveDown(Array queue, int index)
+        {
+            if (index < 0 || index >= Count(queue) - 1 ) return;
+            object swap = queue.GetValue(index + 1);
+            queue.SetValue(queue.GetValue(index), index+1);
+            queue.SetValue(swap, index);
+        }
+
         public static void ShiftBack(Array queue)
         {
             for (int i = queue.Length-1; i > 0; i--)
@@ -80,6 +96,14 @@ namespace USharpVideoQueue.Runtime.Utility
                 queue.SetValue(queue.GetValue(i-1), i);
             }
             queue.SetValue(EmptyReference(queue), 0);
+        }
+
+        public static void Clear(Array queue)
+        {
+            for (int i = 0; i < queue.Length-1; i++)
+            {
+                queue.SetValue(EmptyReference(queue), i);
+            }
         }
 
 
