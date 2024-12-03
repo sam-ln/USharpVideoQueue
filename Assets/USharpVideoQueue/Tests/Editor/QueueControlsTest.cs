@@ -34,6 +34,7 @@ namespace USharpVideoQueue.Tests.Editor
             controlsMock = new Mock<QueueControls> { CallBase = true };
             controls = controlsMock.Object;
             controlsMock.Setup(controls => controls.getPlayerNameByID(It.IsAny<int>())).Returns(MOCK_PLAYER_NAME);
+            controlsMock.Setup(controls => controls.UpdateURLInputFieldEnabled(It.IsAny<bool>()));
 
             uiURLInput = new GameObject().AddComponent<VRCUrlInputField>();
             controls.Queue = queue0;
@@ -132,6 +133,7 @@ namespace USharpVideoQueue.Tests.Editor
             Assert.AreEqual(0, controls.CurrentPage);
         }
 
+        [Test]
         public void RemovingLastVideo()
         {
             controls.SetPageAutomatically = true;
@@ -148,6 +150,16 @@ namespace USharpVideoQueue.Tests.Editor
             queue0.OnUSharpVideoEnd();
 
             Assert.AreEqual(0, controls.CurrentPage);
+        }
+
+        [Test]
+        public void URLInputFieldHasCorrectInteractableState()
+        {
+            queue0.SetCustomUrlInputEnabled(true);
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.Once());
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Never());
+            queue0.SetCustomUrlInputEnabled(false);
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Once());
         }
 
         private Mock<UIQueueItem>[] createQueueItems(int count, QueueControls queueControls)

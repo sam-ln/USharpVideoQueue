@@ -3,6 +3,7 @@ using NUnit.Framework;
 using USharpVideoQueue.Runtime;
 using VRC.SDKBase;
 using Moq;
+using UnityEditor.VersionControl;
 using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Editor.TestUtils;
 
@@ -318,6 +319,36 @@ namespace USharpVideoQueue.Tests.Editor
             //Video should be queued
             Assert.AreEqual(2, queue0.QueuedVideosCount());
             Assert.AreEqual(2, queue1.QueuedVideosCount());
+        }
+
+        [Test]
+        public void NonOwnerCannotClearQueue()
+        {
+            //player 0 is owner of the session
+            MockGroup.Master = MockGroup.MockSets[0];
+            //player 0 queues a video
+            queue0.QueueVideo(url0);
+            //player 1 (non-owner) tries to clear
+            queue1.Clear();
+            //Ensure video was not cleared
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+        }
+
+        [Test]
+        public void NonOwnerCannotMoveVideo()
+        {
+            //player 0 is master of the session
+            MockGroup.Master = MockGroup.MockSets[0];
+            queue0.QueueVideo(url0);
+            queue0.OnUSharpVideoLoadStart();
+            queue0.QueueVideo(url1);
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue0.QueueVideo(url2);
+            
+            queue1.RequestMoveVideo(2, true);
+            Assert.AreEqual(url2, queue0.GetURL(2));
+            Assert.AreEqual(url2, queue1.GetURL(2));
         }
     }
 }

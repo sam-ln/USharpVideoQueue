@@ -202,9 +202,88 @@ namespace USharpVideoQueue.Tests.Editor
             }
         }
 
+        [Test]
+        //Assert no Exception
         public void RemoveNotExistingVideo()
         {
             queue.RequestRemoveVideo(0);
+        }
+
+        [Test]
+
+        public void ClearQueue()
+        {
+            //Queue video
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            //Simulate USharpVideoPlayer behavior (starts playing)
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoPlay();
+            //Add another entry
+            queue.QueueVideo(url2);
+            //Clear queue while video plays
+            queue.Clear();
+            //Ensure player gets stopped
+            vpMock.Verify(vp => vp.StopVideo(), Times.Once);
+            //Ensure all videos are cleared
+            Assert.AreEqual(0, queue.QueuedVideosCount());
+        }
+        
+        /// <summary>
+        /// Test that the player is stopped, even though it is still loading.
+        /// Removing the playing video is not allowed usually, but in this case it's
+        /// done anyway to resolve player issues.
+        /// </summary>
+        [Test]
+        public void ClearQueueWhileVideoIsLoading()
+        {
+            //Queue video
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            //Simulate USharpVideoPlayer behavior (starts playing)
+            queue.OnUSharpVideoLoadStart();
+            //Clear queue while video is still loading
+            queue.Clear();
+            //Ensure player gets stopped
+            vpMock.Verify(vp => vp.StopVideo(), Times.Once);
+            //Ensure all videos are cleared
+            Assert.AreEqual(0, queue.QueuedVideosCount());
+        }
+
+        [Test]
+
+        public void ShiftVideosAround()
+        {
+            var url0 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url0);
+            queue.OnUSharpVideoLoadStart();
+            queue.QueueVideo(url1);
+            queue.QueueVideo(url2);
+            
+            //shift url2 up
+            queue.RequestMoveVideo(2, true);
+            //Ensure url was shifted
+            Assert.AreEqual(url0, queue.GetURL(0));
+            Assert.AreEqual(url2, queue.GetURL(1));
+            Assert.AreEqual(url1, queue.GetURL(2));
+            //make illegal requests and ensure that queue stays the same (move index 0 down or index 1 up)
+            queue.RequestMoveVideo(0, false);
+            Assert.AreEqual(url0, queue.GetURL(0));
+            Assert.AreEqual(url2, queue.GetURL(1));
+            Assert.AreEqual(url1, queue.GetURL(2));
+            queue.RequestMoveVideo(1, true);
+            Assert.AreEqual(url0, queue.GetURL(0));
+            Assert.AreEqual(url2, queue.GetURL(1));
+            Assert.AreEqual(url1, queue.GetURL(2));
+            //shift url2 back down
+            queue.RequestMoveVideo(1,false);
+            //ensure initial positions are restored
+            Assert.AreEqual(url0, queue.GetURL(0));
+            Assert.AreEqual(url1, queue.GetURL(1));
+            Assert.AreEqual(url2, queue.GetURL(2));
         }
     }
 }
