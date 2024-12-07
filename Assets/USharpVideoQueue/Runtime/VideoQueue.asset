@@ -230,7 +230,7 @@ MonoBehaviour:
       Data: 15|UnityEngine.TooltipAttribute, UnityEngine.CoreModule
     - Name: tooltip
       Entry: 1
-      Data: Allow users to enter custom urls
+      Data: Allow users to enter custom urls.
     - Name: 
       Entry: 8
       Data: 
