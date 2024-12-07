@@ -18,7 +18,9 @@ namespace USharpVideoQueue.Runtime
         [Tooltip("Enforce limit per user for queued videos")] [SerializeField] [UdonSynced]
         internal bool videoLimitPerUserEnabled = false;
 
-        [Tooltip("Allow users to enter custom urls")] [SerializeField] [UdonSynced]
+        // This field is not enforced by the queue, but must be respected by UI elements which
+        // add videos to the queue. IsLocalPlayerPermittedToQueueCustomVideos() should be used.
+        [Tooltip("Allow users to enter custom urls.")] [SerializeField] [UdonSynced]
         internal bool customUrlInputEnabled = false;
 
         [Tooltip("Individual limit per user for queued videos")] [SerializeField] [UdonSynced]
@@ -307,6 +309,16 @@ namespace USharpVideoQueue.Runtime
         {
             if (localPlayerHasElevatedRights() || !videoLimitPerUserEnabled) return true;
             return QueuedVideosCountByUser(localPlayerId) < videoLimitPerUser;
+        }
+
+        
+        /// <summary>
+        /// Returns whether the local player is permitted to add custom video links to the queue.
+        /// This check is not affected by the [VideoLimitPerUser]
+        /// </summary>
+        public bool IsLocalPlayerPermittedToQueueCustomVideos()
+        {
+            return localPlayerHasElevatedRights() || customUrlInputEnabled;
         }
 
         /// <summary>

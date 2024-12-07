@@ -1,96 +1,98 @@
-﻿
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-public class Switch : UdonSharpBehaviour
+
+namespace USharpVideoQueue.Runtime.InstanceSettings
 {
-    public Animator Animator;
-
-    public UdonBehaviour OnEventReceiver;
-    public string OnEvent;
-    public UdonBehaviour OffEventReceiver;
-    public string OffEvent;
-
-    [UdonSynced]
-    public bool CurrentState;
-    public bool AllowMasterOnly;
-    public bool TriggerEventForEveryone;
-
-    public bool SyncVisibleState;
-    private bool animationState = true;
-
-    private VRCPlayerApi localPlayer;
-    void Start()
+    public class Switch : UdonSharpBehaviour
     {
-        localPlayer = Networking.LocalPlayer;
-        triggerEvent();
-        updateAnimation();
-    }
+        public Animator Animator;
 
-    public void _SwitchTriggered()
-    {
-        if (AllowMasterOnly && !localPlayer.isMaster && SyncVisibleState) return;
+        public UdonBehaviour OnEventReceiver;
+        public string OnEvent;
+        public UdonBehaviour OffEventReceiver;
+        public string OffEvent;
 
-        if (SyncVisibleState && !Networking.IsOwner(localPlayer, gameObject))
+        [UdonSynced] public bool CurrentState;
+        public bool AllowMasterOnly;
+        public bool TriggerEventForEveryone;
+
+        public bool SyncVisibleState;
+        private bool animationState = true;
+
+        private VRCPlayerApi localPlayer;
+
+        void Start()
         {
-            Networking.SetOwner(localPlayer, gameObject);
+            localPlayer = Networking.LocalPlayer;
+            triggerEvent();
+            updateAnimation();
         }
 
-        CurrentState = !CurrentState;
-        triggerEvent();
-        updateAnimation();
-        if (SyncVisibleState) RequestSerialization();
-    }
+        public void _SwitchTriggered()
+        {
+            if (AllowMasterOnly && !localPlayer.isMaster && SyncVisibleState) return;
 
-    private void animateSwitchOn()
-    {
-        Animator.Play("Base Layer.SwitchOn");
-        animationState = true;
-    }
+            if (SyncVisibleState && !Networking.IsOwner(localPlayer, gameObject))
+            {
+                Networking.SetOwner(localPlayer, gameObject);
+            }
 
-    private void animateSwitchOff()
-    {
-        Animator.Play("Base Layer.SwitchOff");
-        animationState = false;
-    }
+            CurrentState = !CurrentState;
+            triggerEvent();
+            updateAnimation();
+            if (SyncVisibleState) RequestSerialization();
+        }
 
-    private void updateAnimation()
-    {
-        if (CurrentState != animationState)
+        private void animateSwitchOn()
+        {
+            Animator.Play("Base Layer.SwitchOn");
+            animationState = true;
+        }
+
+        private void animateSwitchOff()
+        {
+            Animator.Play("Base Layer.SwitchOff");
+            animationState = false;
+        }
+
+        private void updateAnimation()
+        {
+            if (CurrentState != animationState)
+            {
+                if (CurrentState)
+                {
+                    animateSwitchOn();
+                }
+                else
+                {
+                    animateSwitchOff();
+                }
+            }
+        }
+
+        private void triggerEvent()
         {
             if (CurrentState)
             {
-                animateSwitchOn();
+                OnEventReceiver.SendCustomEvent(OnEvent);
             }
             else
             {
-                animateSwitchOff();
+                OffEventReceiver.SendCustomEvent(OffEvent);
             }
         }
-    }
 
-    private void triggerEvent()
-    {
-        if (CurrentState)
+        public override void OnDeserialization()
         {
-            OnEventReceiver.SendCustomEvent(OnEvent);
-        }
-        else
-        {
-            OffEventReceiver.SendCustomEvent(OffEvent);
+            if (TriggerEventForEveryone)
+            {
+                triggerEvent();
+            }
+
+            updateAnimation();
         }
     }
-
-    public override void OnDeserialization()
-    {
-        if (TriggerEventForEveryone)
-        {
-            triggerEvent();
-        }
-        updateAnimation();
-    }
-
-
 }

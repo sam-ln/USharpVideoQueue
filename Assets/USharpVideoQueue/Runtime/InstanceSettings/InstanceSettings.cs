@@ -18,6 +18,11 @@ namespace USharpVideoQueue.Runtime.InstanceSettings
         private void Start()
         {
             if (!Networking.IsMaster) return;
+            if (_videoQueue == null)
+            {
+                Debug.LogError("VideoQueue is null. Please set the reference in the editor!");
+                return;
+            }
             videoLimit = _videoQueue.videoLimitPerUser;
             UpdateVideoLimitDisplay();
         }
