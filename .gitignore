@@ -58,6 +58,8 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+UserSettings/Layouts
+
 /Assets/Udon/
 /Assets/Udon.meta
 /Assets/UdonSharp/
@@ -77,8 +79,6 @@ crashlytics-build.properties
 
 bakery_times.log
 
-/Packages
-/ProjectSettings
 /.vscode
 /Assets/Resources
 /Assets/Resources.meta
@@ -86,4 +86,6 @@ bakery_times.log
 /Assets/UdonSharp.meta
 /.idea
 /Assets/Plugins
+
+/ClientSimStorage
 
