@@ -1,30 +1,24 @@
-﻿using System;
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
-using VRC.SDK3.Components;
-using VRC.SDKBase;
 
 namespace USharpVideoQueue.Runtime.InstanceSettings
 {
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class InstanceSettings : UdonSharpBehaviour
     {
         [SerializeField] private VideoQueue _videoQueue;
 
         [SerializeField] private Text _videoLimitText;
 
-        [UdonSynced] private int videoLimit = 2;
-
         private void Start()
         {
-            if (!Networking.IsMaster) return;
             if (_videoQueue == null)
             {
                 Debug.LogError("VideoQueue is null. Please set the reference in the editor!");
                 return;
             }
-            videoLimit = _videoQueue.videoLimitPerUser;
-            UpdateVideoLimitDisplay();
+            _videoQueue.RegisterCallbackReceiver(this);
         }
 
         public void _EnableCustomURLs()
@@ -50,21 +44,14 @@ namespace USharpVideoQueue.Runtime.InstanceSettings
 
         public void _IncreaseVideoLimit()
         {
-            if (!Networking.IsMaster) return;
-            videoLimit += 1;
-            UpdateVideoLimitDisplay();
-            RequestSerialization();
-            _videoQueue.SetVideoLimitPerUser(videoLimit);
+            int currentVideoLimit = _videoQueue.GetVideoLimitPerUser();
+            _videoQueue.SetVideoLimitPerUser(currentVideoLimit + 1);
         }
 
         public void _DecreaseVideoLimit()
         {
-            if (!Networking.IsMaster) return;
-            if (videoLimit == 0) return;
-            videoLimit -= 1;
-            UpdateVideoLimitDisplay();
-            RequestSerialization();
-            _videoQueue.SetVideoLimitPerUser(videoLimit);
+            int currentVideoLimit = _videoQueue.GetVideoLimitPerUser();
+            _videoQueue.SetVideoLimitPerUser(currentVideoLimit - 1);
         }
 
         public void _ResetQueue()
@@ -72,14 +59,9 @@ namespace USharpVideoQueue.Runtime.InstanceSettings
             _videoQueue.Clear();
         }
 
-        private void UpdateVideoLimitDisplay()
+        public void OnUSharpVideoQueueVideoLimitPerUserChanged()
         {
-            _videoLimitText.text = videoLimit.ToString();
-        }
-
-        public override void OnDeserialization()
-        {
-            UpdateVideoLimitDisplay();
+            _videoLimitText.text = _videoQueue.GetVideoLimitPerUser().ToString();
         }
     }
 }

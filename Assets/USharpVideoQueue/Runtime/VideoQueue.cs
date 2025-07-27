@@ -41,6 +41,11 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
         public const string OnUSharpVideoQueueVideoEnded = "OnUSharpVideoQueueVideoEnded";
         public const string OnUSharpVideoQueueFinalVideoEnded = "OnUSharpVideoQueueFinalVideoEnded";
+        public const string OnUSharpVideoQueueCleared = "OnUSharpVideoQueueCleared";
+        public const string OnUSharpVideoQueueCurrentVideoRemoved = "OnUSharpVideoQueueCurrentVideoRemoved";
+        public const string OnUSharpVideoQueueCustomURLsEnabled = "OnUSharpVideoQueueCustomURLsEnabled";
+        public const string OnUSharpVideoQueueCustomURLsDisabled = "OnUSharpVideoQueueCustomURLsDisabled";
+        public const string OnUSharpVideoQueueVideoLimitPerUserChanged = "OnUSharpVideoQueueVideoLimitPerUserChanged";
 
         internal UdonSharpBehaviour[] registeredCallbackReceivers;
 
@@ -65,7 +70,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool WaitingForPlayback { get; private set; }
 
-        internal void Start()
+        protected internal virtual void Start()
         {
             EnsureInitialized();
         }
@@ -160,6 +165,8 @@ namespace USharpVideoQueue.Runtime
             QueueArray.Clear(queuedVideos);
             QueueArray.Clear(queuedTitles);
             QueueArray.Clear(queuedByPlayer);
+            
+            QueueCallbackEvent(OnUSharpVideoQueueCleared);
             invokeEventsAndSynchronize();
             clearVideoPlayer();
             OnQueueContentChange();
@@ -191,7 +198,10 @@ namespace USharpVideoQueue.Runtime
             }
 
             // video with index 0 is only allowed to be removed when it is not currently loading to prevent video player inconsistencies.
-            if (!WaitingForPlayback) skipToNextVideo();
+            if (WaitingForPlayback) return;
+            QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);
+            invokeEventsAndSynchronize();
+            skipToNextVideo();
         }
 
         internal void removeVideo(int index)
@@ -341,10 +351,14 @@ namespace USharpVideoQueue.Runtime
         public void SetVideoLimitPerUser(int limit)
         {
             if (!localPlayerHasElevatedRights()) return;
+            if (limit < 0) return;
             ensureOwnership();
             videoLimitPerUser = limit;
-            synchronizeData();
+            QueueCallbackEvent(OnUSharpVideoQueueVideoLimitPerUserChanged);
+            invokeEventsAndSynchronize();
         }
+
+        public int GetVideoLimitPerUser() => videoLimitPerUser;
 
         /// <summary>
         /// Sets whether the limit for players without elevated rights should be enforced. Requires elevated rights.
@@ -354,7 +368,8 @@ namespace USharpVideoQueue.Runtime
             if (!localPlayerHasElevatedRights()) return;
             ensureOwnership();
             videoLimitPerUserEnabled = enabled;
-            synchronizeData();
+            QueueCallbackEvent(OnUSharpVideoQueueVideoLimitPerUserChanged);
+            invokeEventsAndSynchronize();
         }
         
         /// <summary>
@@ -365,7 +380,8 @@ namespace USharpVideoQueue.Runtime
             if (!localPlayerHasElevatedRights()) return;
             ensureOwnership();
             customUrlInputEnabled = enabled;
-            synchronizeData();
+            QueueCallbackEvent(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled);
+            invokeEventsAndSynchronize();
             OnQueueContentChange();
         }
 
@@ -459,7 +475,7 @@ namespace USharpVideoQueue.Runtime
         /// <summary>
         /// Override this function to integrate with other permission systems!
         /// </summary>
-        internal virtual bool localPlayerHasElevatedRights()
+        protected virtual bool localPlayerHasElevatedRights()
         {
             return isMaster();
         }
@@ -514,7 +530,7 @@ namespace USharpVideoQueue.Runtime
 
         /* USharpVideoQueue Emitted Callbacks */
 
-        internal void OnQueueContentChange()
+        protected internal void OnQueueContentChange()
         {
             SendCallback(OnUSharpVideoQueueContentChangeEvent);
         }

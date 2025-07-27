@@ -49,7 +49,7 @@ namespace USharpVideoQueue.Runtime
         {
             UpdateQueueItems();
             Queue.EnsureInitialized();
-            UpdateURLInputFieldEnabled(Queue.customUrlInputEnabled);
+            UpdateURLInputFieldEnabled(Queue.IsLocalPlayerPermittedToQueueCustomVideos());
         }
 
         public void SetCurrentPage(int currentPage)
@@ -60,8 +60,8 @@ namespace USharpVideoQueue.Runtime
 
         internal virtual void UpdateURLInputFieldEnabled(bool customUrlsEnabled)
         {
-            UIURLInputText.text = customUrlsEnabled ? "Enter Video URL..." : "URL input disabled!";
-            UIURLInput.readOnly= !customUrlsEnabled;
+            if (UIURLInputText != null) UIURLInputText.text = customUrlsEnabled ? "Enter Video URL..." : "URL input disabled!";
+            if (UIURLInput != null) UIURLInput.readOnly = !customUrlsEnabled;
         }
 
         public void UpdateQueueItems()
