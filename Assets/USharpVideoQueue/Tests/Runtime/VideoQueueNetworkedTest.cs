@@ -203,18 +203,29 @@ namespace USharpVideoQueue.Tests.Runtime
             //make player 1 master of the session
             MockGroup.Master = MockGroup.MockSets[1];
 
+            // non-master queues in two videos. After queueing in the first, the video player starts to load.
             queue0.QueueVideo(url0);
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
             queue0.QueueVideo(url1);
-            queue1.RequestRemoveVideo(0);
-            Assert.AreEqual(1, queue0.QueuedVideosCount());
-            Assert.AreEqual(1, queue1.QueuedVideosCount());
-            queue1.RequestRemoveVideo(0);
-            Assert.AreEqual(1, queue0.QueuedVideosCount());
-            Assert.AreEqual(1, queue1.QueuedVideosCount());
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
+            
+            //master removes playing song
+            queue1.RequestRemoveVideo(0);
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            
+            // new video starts loading
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
+            
+            // master unsuccessfully tries to remove loading video
+            queue1.RequestRemoveVideo(0);
+            Assert.AreEqual(1, queue0.QueuedVideosCount());
+            Assert.AreEqual(1, queue1.QueuedVideosCount());
+            
+            // second video starts playing
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
+            
+            // master successfully removes second video
             queue1.RequestRemoveVideo(0);
             Assert.AreEqual(0, queue0.QueuedVideosCount());
             Assert.AreEqual(0, queue1.QueuedVideosCount());

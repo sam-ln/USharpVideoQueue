@@ -199,6 +199,7 @@ namespace USharpVideoQueue.Runtime
 
             // video with index 0 is only allowed to be removed when it is not currently loading to prevent video player inconsistencies.
             if (WaitingForPlayback) return;
+            ensureOwnership();
             QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);
             invokeEventsAndSynchronize();
             skipToNextVideo();

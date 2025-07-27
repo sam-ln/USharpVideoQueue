@@ -153,11 +153,22 @@ namespace USharpVideoQueue.Tests.Runtime
         }
 
         [Test]
+        public void URLInputFieldHasCorrectInteractableStateWithElevatedRights()
+        {
+            queue0.SetCustomUrlInputEnabled(false);
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.Once());
+        }
+        
+        [Test]
         public void URLInputFieldHasCorrectInteractableState()
         {
+            //Controls should use queue with no elevated rights
+            controls.Queue = queue1;
+            //elevated user enables custom urls
             queue0.SetCustomUrlInputEnabled(true);
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.Once());
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Never());
+            //elevated user enables custom urls
             queue0.SetCustomUrlInputEnabled(false);
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Once());
         }
