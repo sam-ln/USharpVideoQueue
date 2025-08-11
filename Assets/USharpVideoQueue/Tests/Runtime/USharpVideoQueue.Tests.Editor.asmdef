@@ -9,9 +9,9 @@
         "VRC.Udon",
         "VRC.SDKBase",
         "VRC.SDK3",
-        "UdonSharp.Video",
         "USharpVideoQueue.Runtime",
-        "USharpVideoQueue.Tests.Mock"
+        "USharpVideoQueue.Tests.Mock",
+        "com.arcanescripts.usharpvideo"
     ],
     "includePlatforms": [
         "Editor"

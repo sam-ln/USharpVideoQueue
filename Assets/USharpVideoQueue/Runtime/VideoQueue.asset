@@ -470,7 +470,7 @@ MonoBehaviour:
       Data: 32|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: UdonSharp.Video.USharpVideoPlayer, UdonSharp.Video
+      Data: UdonSharp.Video.USharpVideoPlayer, com.arcanescripts.usharpvideo
     - Name: 
       Entry: 8
       Data: 

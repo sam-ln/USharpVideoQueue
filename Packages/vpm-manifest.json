@@ -5,6 +5,9 @@
     },
     "com.vrchat.worlds": {
       "version": "3.8.2"
+    },
+    "com.arcanescripts.usharpvideo": {
+      "version": "1.2.0"
     }
   },
   "locked": {
@@ -21,6 +24,12 @@
     "com.vrchat.base": {
       "version": "3.8.2",
       "dependencies": {}
+    },
+    "com.arcanescripts.usharpvideo": {
+      "version": "1.2.0",
+      "dependencies": {
+        "com.vrchat.worlds": "3.x.x"
+      }
     }
   }
 }
