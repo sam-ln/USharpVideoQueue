@@ -1,4 +1,4 @@
-name: Build Release
+name: Build Release VPM & .unitypackage
 
 on:
   workflow_dispatch:
@@ -82,8 +82,9 @@ jobs:
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
+          draft: true
           files: |
             ${{ env.zipFile }}
             ${{ env.unityPackage }}
             ${{ env.packagePath }}/package.json
-          tag_name: ${{ env.version }}
+          tag_name: "v${{ env.version }}"
