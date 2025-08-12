@@ -1,0 +1,19 @@
+{
+  "name": "com.arcanescripts.usharpvideoqueue",
+  "displayName": "USharpVideoQueue",
+  "version": "0.6.3",
+  "description": "Synced Video Queue Asset for USharpVideo ",
+  "gitDependencies": {},
+  "vpmDependencies": {
+    "com.vrchat.worlds": "3.8.2"
+  },
+  "author": {
+    "name": "sam-ln",
+    "email": "dev@arcanescripts.com",
+    "url": "https://github.com/sam-ln"
+  },
+  "legacyFolders": {},
+  "legacyFiles": {},
+  "localPath": "E:\\Unity Projects\\Worlds\\Main\\USharpVideoQueue\\Packages\\com.arcanescripts.usharpvideoqueue",
+  "unity": "2022.3"
+}
