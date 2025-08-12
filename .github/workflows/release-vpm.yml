@@ -11,7 +11,6 @@ jobs:
     outputs:
       config_package: ${{ steps.config_package.outputs.configPackage }}
     steps:
-      # Ensure that required repository variable has been created for the Package
       - name: Validate Package Config
         id: config_package
         run: |
@@ -22,7 +21,6 @@ jobs:
           fi
 
   # Build and release the Package
-  # If the repository is not configured properly, this job will be skipped
   build:
     needs: config
     runs-on: ubuntu-latest
@@ -65,7 +63,7 @@ jobs:
           mkdir -p "uproj/Assets/${{ vars.PACKAGE_NAME }}"
           rsync -a "${{ env.packagePath }}/" "uproj/Assets/${{ vars.PACKAGE_NAME }}/"
 
-      # Build meta list for the Assets layout, excluding asmdefs and PACKAGE_NAME.asset
+      # Build meta list for the Assets layout, excluding asmdefs and PACKAGE_NAME.asset.meta
       - name: Track Meta Files (Assets layout)
         working-directory: uproj
         run: |
@@ -76,13 +74,12 @@ jobs:
 
       # Create UnityPackage using the Assets/ mirror
       - name: Create UnityPackage
-        uses: pCYSl5EDgo/create-unitypackage@cfcd3cf0391a5ef1306342794866a9897c32af0b
+        uses: pCYSl5EDgo/create-unitypackage@v1.2.3
         with:
-          # Output path is relative to working-folder; write beside the ZIP at repo root
-          package-path: "../${{ env.unityPackage }}"
-          include-files: metaList
-          # Tell the action where our Assets/ tree lives
-          working-folder: "uproj"
+          # Paths below are relative to working-folder:
+          working-folder: "uproj"                 # root that contains Assets/
+          include-files: "metaList"               # the list we just created in uproj/
+          package-path: "../${{ env.unityPackage }}"  # write the .unitypackage at repo root
 
       # Make a release tag of the version from the package.json file 
       - name: Create Tag
