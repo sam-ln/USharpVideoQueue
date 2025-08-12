@@ -32,13 +32,13 @@ If you choose this method, you need to use the USharpVideo version provided in m
 
 ### Method 2: Install manually using the .unitypackage file
 This method will not use the VCC and should be used if you already have a non-VCC version of USharpVideo installed in your project
-and you do not want to replace it.
+and you do not want to replace it. This version does not include Assembly Definitions (.asmdef files).
 #### Requirements
 
 - Latest version of VRChat SDK and UdonSharp (installed via [Creator Companion](https://vcc.docs.vrchat.com/))
 - One version of USharpVideo must be installed. USharpVideoQueue supports these versions:
     - [USharpVideo, a fork by sam-ln (recommended)](https://github.com/sam-ln/USharpVideo)
-    - [USharpVideoModernUI, a fork by TheBlackRat](https://github.com/DrBlackRat/USharpVideoModernUI) 
+    - [USharpVideoModernUI, a fork by DrBlackRat](https://github.com/DrBlackRat/USharpVideoModernUI) 
     - [USharpVideo by MerlinVR](https://github.com/MerlinVR/USharpVideo/)
 
 ## Setup in your project
