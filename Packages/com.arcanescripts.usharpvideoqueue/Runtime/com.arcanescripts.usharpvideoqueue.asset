@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5136146375e9a0a498a72a0091b40cc1, type: 3}
   m_Name: com.arcanescripts.usharpvideoqueue
   m_EditorClassIdentifier: 
-  sourceAssembly: {fileID: 5897886265953266890, guid: 4d76d61a862ad604db349e3d2f430198,
+  sourceAssembly: {fileID: 5897886265953266890, guid: 5ad400954ebf9374bbbfd9a208389c14,
     type: 3}

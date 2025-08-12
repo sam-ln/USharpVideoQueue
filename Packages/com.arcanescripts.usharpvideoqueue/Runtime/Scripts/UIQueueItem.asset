@@ -416,7 +416,7 @@ MonoBehaviour:
       Data: 20|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: USharpVideoQueue.Runtime.QueueControls, USharpVideoQueue.Runtime
+      Data: USharpVideoQueue.Runtime.QueueControls, com.arcanescripts.usharpvideoqueue
     - Name: 
       Entry: 8
       Data: 

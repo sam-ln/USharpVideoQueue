@@ -1686,7 +1686,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 3.4760005, y: 8.773999}
+  m_AnchoredPosition: {x: 3.4760132, y: 8.774002}
   m_SizeDelta: {x: 519.71045, y: 480.93973}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &5133045362484473096
@@ -1734,7 +1734,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 6
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &6316895368897207054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1789,8 +1789,6 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 7539731111554126671}
   _videoQueue: {fileID: 0}
   _videoLimitText: {fileID: 6088994863672843582}
-  _urlInputFieldText: {fileID: 0}
-  _urlInputField: {fileID: 0}
 --- !u!114 &7539731111554126671
 MonoBehaviour:
   m_ObjectHideFlags: 0
