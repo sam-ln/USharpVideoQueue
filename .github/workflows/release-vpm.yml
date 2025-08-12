@@ -11,7 +11,6 @@ jobs:
     outputs:
       config_package: ${{ steps.config_package.outputs.configPackage }}
     steps:
-      
       # Ensure that required repository variable has been created for the Package
       - name: Validate Package Config
         id: config_package
@@ -51,26 +50,40 @@ jobs:
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
         run: |
-          echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
+          echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.zip" >> $GITHUB_ENV
           echo "unityPackage=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
           echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
 
-      # Zip the Package for release
+      # Zip the Package for release (kept under Packages/)
       - name: Create Package Zip
         working-directory: "${{ env.packagePath }}"
         run: zip -r "${{ github.workspace }}/${{ env.zipFile }}" .
-      
-      # Build a list of .meta files for future use
-      - name: Track Package Meta Files
-        run: find "${{ env.packagePath }}" -type f -name '*.meta' ! -name '*.asmdef.meta' > metaList
-      
-      # Make a UnityPackage version of the Package for release
+
+      # --- Create a mirror under Assets/ ONLY for the .unitypackage ---
+      - name: Prepare Assets Mirror For UnityPackage
+        run: |
+          mkdir -p "uproj/Assets/${{ vars.PACKAGE_NAME }}"
+          rsync -a "${{ env.packagePath }}/" "uproj/Assets/${{ vars.PACKAGE_NAME }}/"
+
+      # Build meta list for the Assets layout, excluding asmdefs and PACKAGE_NAME.asset
+      - name: Track Meta Files (Assets layout)
+        working-directory: uproj
+        run: |
+          find "Assets/${{ vars.PACKAGE_NAME }}" -type f -name '*.meta' \
+            ! -name '*.asmdef.meta' \
+            ! -name "${{ vars.PACKAGE_NAME }}.asset.meta" \
+            > metaList
+
+      # Create UnityPackage using the Assets/ mirror
       - name: Create UnityPackage
         uses: pCYSl5EDgo/create-unitypackage@cfcd3cf0391a5ef1306342794866a9897c32af0b
         with:
-          package-path: ${{ env.unityPackage }}
+          # Output path is relative to working-folder; write beside the ZIP at repo root
+          package-path: "../${{ env.unityPackage }}"
           include-files: metaList
-      
+          # Tell the action where our Assets/ tree lives
+          working-folder: "uproj"
+
       # Make a release tag of the version from the package.json file 
       - name: Create Tag
         id: tag_version
@@ -78,7 +91,7 @@ jobs:
         with:
           tag: "v${{ env.version }}"
       
-      # Publish the Release to GitHub
+      # Publish the Release to GitHub (draft)
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
