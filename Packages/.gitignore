@@ -1,3 +1,5 @@
 */
 !com.vrchat.core.*/
-!com.arcanescripts.usharpvideoqueue
+!com.arcanescripts.usharpvideoqueue/
+
+!com.arcanescripts.usharpvideoqueue/**
