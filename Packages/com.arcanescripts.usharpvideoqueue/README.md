@@ -1,1 +1,1 @@
-# com.arcanescripts.usharpvideoqueue by Sam
+# com.arcanescripts.usharpvideoqueue by sam-ln
