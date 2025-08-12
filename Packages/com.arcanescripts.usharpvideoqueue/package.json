@@ -6,7 +6,7 @@
   "description": "Synced Video Queue Asset for USharpVideo ",
   "gitDependencies": {},
   "vpmDependencies": {
-    "com.vrchat.worlds": "3.8.2",
+    "com.vrchat.worlds": "3.x.x",
     "com.arcanescripts.usharpvideo": "1.x.x"
   },
   "author": {
@@ -17,6 +17,5 @@
   "legacyFolders": {
     "Assets\\USharpVideoQueue": ""
   },
-  "legacyFiles": {},
-  "localPath": "E:\\Unity Projects\\Worlds\\Main\\USharpVideoQueue\\Packages\\com.arcanescripts.usharpvideoqueue"
+  "legacyFiles": {}
 }

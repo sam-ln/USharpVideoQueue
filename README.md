@@ -15,17 +15,34 @@ stability and easy integration into VRChat worlds.
 - Easy to integrate with permission systems
 - Allows multiple displays/controls for the same queue
 - Pagination for multiple pages of videos
+- Reordering queued videos
 
-## Setup
+## Installation
 
-### Requirements
+**USharpVideoQueue** can be installed using two different methods.
+
+### Method 1: VRChat Creator Companion (recommended)
+
+It's recommended to use the [VRChat Creator Companion (VCC)](https://vcc.docs.vrchat.com/) to install this package.
+To do so, visit my VPM Repository below and click "***Add to VCC***" and add the `com.arcanescripts.usharpvideoqueue`package to your project.
+
+If you choose this method, you need to use the USharpVideo version provided in my repository. It will be automatically installed as a dependency.
+
+####  [📥 My VRChat Creator Companion Repository](https://sam-ln.github.io/vpm/)
+
+### Method 2: Install manually using the .unitypackage file
+This method will not use the VCC and should be used if you already have a non-VCC version of USharpVideo installed in your project
+and you do not want to replace it. This version does not include Assembly Definitions (.asmdef files).
+#### Requirements
 
 - Latest version of VRChat SDK and UdonSharp (installed via [Creator Companion](https://vcc.docs.vrchat.com/))
-- [USharpVideo v.1.0.1](https://github.com/MerlinVR/USharpVideo/releases/tag/v1.0.1)
+- One version of USharpVideo must be installed. USharpVideoQueue supports these versions:
+    - [USharpVideo, a fork by sam-ln (recommended)](https://github.com/sam-ln/USharpVideo)
+    - [USharpVideoModernUI, a fork by DrBlackRat](https://github.com/DrBlackRat/USharpVideoModernUI) 
+    - [USharpVideo by MerlinVR](https://github.com/MerlinVR/USharpVideo/)
 
-### Adding to Scene
-
-- Download and open .unitypackage release file and add everything to your project
+## Setup in your project
+- Depending on your install method, locate USharpVideoQueue in *Packages* or *Assets*
 - Drag USharpVideoQueue prefab into your Unity scene
 - Open up the Queue in your Inspector window and drag your USharpVideoPlayer into the field "Video Player"
 
