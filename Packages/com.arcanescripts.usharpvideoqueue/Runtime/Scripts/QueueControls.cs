@@ -19,6 +19,7 @@ namespace USharpVideoQueue.Runtime
         public int CurrentPage = 0;
         public Paginator Paginator;
         internal bool hasPaginator;
+        private int localPlayerId;
 
         internal void Start()
         {
@@ -43,13 +44,14 @@ namespace USharpVideoQueue.Runtime
 
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
+
+            localPlayerId = Networking.LocalPlayer.playerId;
         }
 
         public void OnUSharpVideoQueueContentChange()
         {
             UpdateQueueItems();
-            Queue.EnsureInitialized();
-            UpdateURLInputFieldEnabled(Queue.IsLocalPlayerPermittedToQueueCustomVideos());
+            UpdateURLInputFieldEnabled(Queue.IsPlayerPermittedToQueueCustomVideos(localPlayerId));
         }
 
         public void SetCurrentPage(int currentPage)
@@ -89,9 +91,9 @@ namespace USharpVideoQueue.Runtime
                 string playerName = getPlayerNameByID(Queue.GetVideoOwner(videoIndex));
                 string rank = (firstIndexOfPage(CurrentPage) + i + 1).ToString();
                 registeredQueueItems[i].SetContent(description, playerName);
-                registeredQueueItems[i].SetRemoveEnabled(Queue.IsLocalPlayerPermittedToRemoveVideo(videoIndex));
-                registeredQueueItems[i].SetUpEnabled(Queue.IsLocalPlayerAbleToMoveVideo(videoIndex, true));
-                registeredQueueItems[i].SetDownEnabled(Queue.IsLocalPlayerAbleToMoveVideo(videoIndex, false));
+                registeredQueueItems[i].SetRemoveEnabled(Queue.IsPlayerPermittedToRemoveVideo(localPlayerId, videoIndex));
+                registeredQueueItems[i].SetUpEnabled(Queue.IsPlayerAbleToMoveVideo(localPlayerId, videoIndex, true));
+                registeredQueueItems[i].SetDownEnabled(Queue.IsPlayerAbleToMoveVideo(localPlayerId, videoIndex, false));
                 registeredQueueItems[i].SetRank(rank);
                 registeredQueueItems[i].UpdateGameObjects();
             }
@@ -166,12 +168,12 @@ namespace USharpVideoQueue.Runtime
 
         public void MoveUpRank(int rank)
         {
-            Queue.RequestMoveVideo(firstIndexOfPage(CurrentPage) + rank, true);
+            Queue.MoveVideo(firstIndexOfPage(CurrentPage) + rank, true);
         }
 
         public void MoveDownRank(int rank)
         {
-            Queue.RequestMoveVideo(firstIndexOfPage(CurrentPage) + rank, false);
+            Queue.MoveVideo(firstIndexOfPage(CurrentPage) + rank, false);
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */

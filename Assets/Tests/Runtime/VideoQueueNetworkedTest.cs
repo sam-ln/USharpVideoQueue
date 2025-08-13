@@ -356,7 +356,7 @@ namespace USharpVideoQueue.Tests.Runtime
             var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue0.QueueVideo(url2);
             
-            queue1.RequestMoveVideo(2, true);
+            queue1.MoveVideo(2, true);
             Assert.AreEqual(url2, queue0.GetURL(2));
             Assert.AreEqual(url2, queue1.GetURL(2));
         }

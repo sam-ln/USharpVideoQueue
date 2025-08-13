@@ -82,7 +82,6 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
                 },
                 ServerTime = 0
             };
-            mockSet.VideoQueueMock.Setup(queue => queue.getCurrentServerTime()).Returns(() => ++mockSet.ServerTime);
             queueMock.Setup(queue => queue.getLocalPlayer()).Returns(mockSet.Player);
             queueMock.Setup(queue => queue.getPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
             queueMock.Object.Start();
@@ -94,8 +93,6 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
             queueMock.Setup(queue => queue.isOwner()).Returns(true);
             queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
             queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
-            queueMock.Setup(queue => queue.SendCustomEventDelayedSeconds(It.IsAny<String>(), It.IsAny<int>()))
-                .Callback((string name, int seconds) => SimulateSendCustomEvent(queueMock.Object, name));
         }
 
         public class VideoQueueMockSet
@@ -162,7 +159,6 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
 
                     mockSet.VideoQueueMock.Setup(queue => queue.isOwner()).Returns(() => mockSet == Owner);
                     mockSet.VideoQueueMock.Setup(queue => queue.becomeOwner()).Callback(() => Owner = mockSet);
-                    mockSet.VideoQueueMock.Setup(queue => queue.getCurrentServerTime()).Returns(() => ServerTime);
                     mockSet.VideoQueueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(
                         (VRCPlayerApi player) => GetMockedPlayerId(player));
                     mockSet.VideoQueueMock.Setup(queue => queue.isVideoPlayerOwner())

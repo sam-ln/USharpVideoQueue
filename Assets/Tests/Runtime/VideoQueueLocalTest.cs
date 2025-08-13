@@ -264,22 +264,22 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.QueueVideo(url2);
             
             //shift url2 up
-            queue.RequestMoveVideo(2, true);
+            queue.MoveVideo(2, true);
             //Ensure url was shifted
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
             //make illegal requests and ensure that queue stays the same (move index 0 down or index 1 up)
-            queue.RequestMoveVideo(0, false);
+            queue.MoveVideo(0, false);
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
-            queue.RequestMoveVideo(1, true);
+            queue.MoveVideo(1, true);
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
             //shift url2 back down
-            queue.RequestMoveVideo(1,false);
+            queue.MoveVideo(1,false);
             //ensure initial positions are restored
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url1, queue.GetURL(1));

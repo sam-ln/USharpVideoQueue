@@ -12,10 +12,10 @@
         "com.arcanescripts.usharpvideo",
         "com.arcanescripts.usharpvideoqueue"
     ],
-    "includePlatforms": [
+    "includePlatforms": [],
+    "excludePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [

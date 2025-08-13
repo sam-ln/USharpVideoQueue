@@ -33,15 +33,6 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
            Assert.False(queue1.isOwner());
         }
         
-        [Test]
-        public void ServerTimeIncreasesOnSerialization()
-        {
-            int initialTime = MockGroup.ServerTime;
-            queue1.synchronizeData();
-            Assert.AreEqual(queue1.getCurrentServerTime(), queue2.getCurrentServerTime());
-            Assert.True(queue1.getCurrentServerTime() > initialTime);
-           
-        }
         
         [Test]
         public void GetLocalPlayerId()
