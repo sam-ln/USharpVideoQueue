@@ -114,7 +114,7 @@ namespace USharpVideoQueue.Runtime
 
         // Request Sending Methods
 
-        public void QueueVideo(VRCUrl url) => QueueVideo(url, String.Empty);
+        public void QueueVideo(VRCUrl url) => QueueVideo(url, url.Get());
 
         public void QueueVideo(VRCUrl url, string title) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnQueueVideoRequested),
@@ -127,7 +127,7 @@ namespace USharpVideoQueue.Runtime
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnMoveVideoRequested),
                 Networking.LocalPlayer.playerId, index, directionUp);
 
-        public void RequestRemoveVideo(int index) =>
+        public void RemoveVideo(int index) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnRemoveVideoRequested),
                 Networking.LocalPlayer.playerId, index);
 
@@ -190,24 +190,7 @@ namespace USharpVideoQueue.Runtime
         public void OnRemoveVideoRequested(int playerID, int index)
         {
             logDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}");
-
-
-            if (index == 0)
-            {
-                if (VideoOwnerIsWaitingForPlayback)
-                {
-                    logWarning("Couldn't remove first video because video owner is loading!");
-                    return;
-                }
-
-                SkipAndPlayNext();
-                //TODO: QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);   
-            }
-
-            else
-            {
-                removeVideoData(index);
-            }
+            removeVideo(index);
         }
 
 
@@ -245,11 +228,7 @@ namespace USharpVideoQueue.Runtime
         // Player Coordination
 
 
-        public void SkipAndPlayNext()
-        {
-            removeVideoData(0);
-            if (QueuedVideosCount() > 0) MakePlayerPlayFirst();
-        }
+        
 
         public void MakePlayerPlayFirst()
         {
@@ -259,6 +238,21 @@ namespace USharpVideoQueue.Runtime
 
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(InvokeUserPlay),
                 Networking.LocalPlayer.playerId, nextURL);
+        }
+        
+        public void SkipToNextVideo(bool force = false)
+        {
+            if (VideoOwnerIsWaitingForPlayback && !force)
+            {
+                logWarning("Couldn't remove first video because video owner is loading!");
+                return;
+            }
+
+            removeVideoData(0);
+            
+            if(IsEmpty(queuedVideos)) clearVideoPlayer();
+            else MakePlayerPlayFirst();
+            //TODO: QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);   
         }
 
         [NetworkCallable]
@@ -275,7 +269,7 @@ namespace USharpVideoQueue.Runtime
         public void OnVideoOwnerVideoEnd(int playerID)
         {
             logDebug($"OnVideoOwnerVideoEnd received from Player {playerID}");
-            SkipAndPlayNext();
+            SkipToNextVideo();
         }
 
         [NetworkCallable]
@@ -284,7 +278,7 @@ namespace USharpVideoQueue.Runtime
             logDebug($"OnVideoOwnerVideoError received from Player {playerID}");
             VideoOwnerIsWaitingForPlayback = false;
             synchronizeData();
-            SkipAndPlayNext();
+            SkipToNextVideo();
         }
 
         [NetworkCallable]
@@ -425,6 +419,14 @@ namespace USharpVideoQueue.Runtime
             synchronizeData();
         }
 
+        internal void removeVideo(int index, bool force = false)
+        {
+            if (index == 0)
+                SkipToNextVideo(force);
+            else
+                removeVideoData(index);
+        }
+
         internal void removeVideoData(int index)
         {
             if (index >= QueuedVideosCount()) return;
@@ -467,11 +469,9 @@ namespace USharpVideoQueue.Runtime
                 //This why we check against both the validity of the video owner VRCPlayerApi object and their ID.
                 if (videoOwnerPlayerID == leftPlayerID || !isPlayerWithIDValid(videoOwnerPlayerID))
                 {
-                    logDebug($"Removing video {queuedTitles[i]} with URL {queuedVideos[i]} because owner with Player-ID {leftPlayerID} has left the instance!");
-                    removeVideoData(i);
-                    
-
-                    if (i == 0) MakePlayerPlayFirst();
+                    logDebug(
+                        $"Removing video {queuedTitles[i]} with URL {queuedVideos[i]} because owner with Player-ID {leftPlayerID} has left the instance!");
+                    removeVideo(i, true);
                 }
             }
         }
@@ -530,7 +530,8 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if (isMaster()) removeVideosOfPlayerWhoLeft(getPlayerID(player));
+            if (!isOwner()) return; 
+            removeVideosOfPlayerWhoLeft(getPlayerID(player));
         }
 
         /* USharpVideoQueue Emitted Callbacks */
@@ -546,7 +547,7 @@ namespace USharpVideoQueue.Runtime
         {
             logDebug($"Received USharpVideoEnd! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoEnd), Networking.LocalPlayer);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoEnd), localPlayerId);
         }
 
         public void OnUSharpVideoError()
@@ -554,23 +555,23 @@ namespace USharpVideoQueue.Runtime
             logDebug($"Received USharpVideoError! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoError),
-                    Networking.LocalPlayer);
+                    localPlayerId);
         }
 
         public void OnUSharpVideoLoadStart()
         {
             logDebug($"Received USharpVideoLoadStart! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoError),
-                    Networking.LocalPlayer);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoLoadStart),
+                    localPlayerId);
         }
 
         public void OnUSharpVideoPlay()
         {
             logDebug($"Received USharpVideoPlay! Is player Video Player owner? {isVideoPlayerOwner()}");
             if (isVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoError),
-                    Networking.LocalPlayer);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoPlay),
+                    localPlayerId);
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
         }
 

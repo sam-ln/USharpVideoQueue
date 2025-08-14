@@ -91,7 +91,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
 
@@ -101,7 +101,7 @@ namespace USharpVideoQueue.Tests.Runtime
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
 
@@ -121,10 +121,10 @@ namespace USharpVideoQueue.Tests.Runtime
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
         }
 
@@ -197,7 +197,7 @@ namespace USharpVideoQueue.Tests.Runtime
                 Assert.AreEqual(1, queue.QueuedVideosCount());
                 queue.OnUSharpVideoLoadStart();
                 queue.OnUSharpVideoPlay();
-                queue.RequestRemoveVideo(0);
+                queue.RemoveVideo(0);
                 Assert.AreEqual(0, queue.QueuedVideosCount());
             }
         }
@@ -206,7 +206,7 @@ namespace USharpVideoQueue.Tests.Runtime
         //Assert no Exception
         public void RemoveNotExistingVideo()
         {
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
         }
 
         [Test]

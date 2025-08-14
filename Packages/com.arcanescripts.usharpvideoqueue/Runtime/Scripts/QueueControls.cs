@@ -163,7 +163,7 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-            Queue.RequestRemoveVideo(firstIndexOfPage(CurrentPage) + rank);
+            Queue.RemoveVideo(firstIndexOfPage(CurrentPage) + rank);
         }
 
         public void MoveUpRank(int rank)

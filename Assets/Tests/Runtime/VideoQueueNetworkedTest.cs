@@ -83,14 +83,14 @@ namespace USharpVideoQueue.Tests.Runtime
         {
             queue0.QueueVideo(url0);
             queue0.OnUSharpVideoLoadStart();
-            queue0.RequestRemoveVideo(0);
+            queue0.RemoveVideo(0);
             // video was not removed because it is still loading
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             // video player signals loading is finished
             queue0.OnUSharpVideoLoadStart();
             queue0.OnUSharpVideoPlay();
 
-            queue0.RequestRemoveVideo(0);
+            queue0.RemoveVideo(0);
             // video can now be removed
             Assert.AreEqual(0, queue0.QueuedVideosCount());
         }
@@ -100,7 +100,7 @@ namespace USharpVideoQueue.Tests.Runtime
         {
             queue0.QueueVideo(url0);
             queue0.OnUSharpVideoLoadStart();
-            queue0.RequestRemoveVideo(0);
+            queue0.RemoveVideo(0);
             // video was not removed because it is still loading
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             // video player signals error
@@ -183,7 +183,7 @@ namespace USharpVideoQueue.Tests.Runtime
                 queue0.OnUSharpVideoPlay();
                 Assert.AreEqual(1, queue0.QueuedVideosCount());
                 Assert.AreEqual(1, queue1.QueuedVideosCount());
-                queue0.RequestRemoveVideo(0);
+                queue0.RemoveVideo(0);
                 Assert.AreEqual(0, queue0.QueuedVideosCount());
                 Assert.AreEqual(0, queue1.QueuedVideosCount());
                 queue1.QueueVideo(url1);
@@ -191,7 +191,7 @@ namespace USharpVideoQueue.Tests.Runtime
                 Assert.AreEqual(1, queue1.QueuedVideosCount());
                 queue1.OnUSharpVideoLoadStart();
                 queue1.OnUSharpVideoPlay();
-                queue1.RequestRemoveVideo(0);
+                queue1.RemoveVideo(0);
                 Assert.AreEqual(0, queue0.QueuedVideosCount());
                 Assert.AreEqual(0, queue1.QueuedVideosCount());
             }
@@ -210,7 +210,7 @@ namespace USharpVideoQueue.Tests.Runtime
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
             
             //master removes playing song
-            queue1.RequestRemoveVideo(0);
+            queue1.RemoveVideo(0);
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             Assert.AreEqual(1, queue1.QueuedVideosCount());
             
@@ -218,7 +218,7 @@ namespace USharpVideoQueue.Tests.Runtime
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
             
             // master unsuccessfully tries to remove loading video
-            queue1.RequestRemoveVideo(0);
+            queue1.RemoveVideo(0);
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             Assert.AreEqual(1, queue1.QueuedVideosCount());
             
@@ -226,7 +226,7 @@ namespace USharpVideoQueue.Tests.Runtime
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
             
             // master successfully removes second video
-            queue1.RequestRemoveVideo(0);
+            queue1.RemoveVideo(0);
             Assert.AreEqual(0, queue0.QueuedVideosCount());
             Assert.AreEqual(0, queue1.QueuedVideosCount());
         }
@@ -272,13 +272,13 @@ namespace USharpVideoQueue.Tests.Runtime
             Assert.AreEqual(3, queue0.QueuedVideosCount());
             Assert.AreEqual(3, queue1.QueuedVideosCount());
             //player 1 tries to remove video from player 0
-            queue1.RequestRemoveVideo(1);
+            queue1.RemoveVideo(1);
             //no video was removed because player 1 does not have permission to remove video from player 0
             Assert.AreEqual(3, queue0.QueuedVideosCount());
             Assert.AreEqual(3, queue1.QueuedVideosCount());
             
             //player 1 tries to remove video from player 1
-            queue1.RequestRemoveVideo(2);
+            queue1.RemoveVideo(2);
             
             Assert.AreEqual(2, queue0.QueuedVideosCount());
             Assert.AreEqual(2, queue1.QueuedVideosCount());
