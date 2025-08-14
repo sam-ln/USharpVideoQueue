@@ -154,21 +154,24 @@ namespace USharpVideoQueue.Runtime
             if (url == null || !Validation.ValidateURL(url.Get()))
             {
                 logWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the URL format was invalid!", true);
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the URL format was invalid!",
+                    true);
                 return;
             }
 
             if (!IsPlayerPermittedToQueueVideo(playerID))
             {
                 logWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the player reached their personal limit!", true);
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the player reached their personal limit!",
+                    true);
                 return;
             }
 
             if (Count(queuedVideos) >= maxQueueItems)
             {
                 logWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the queue is full!", true);
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the queue is full!",
+                    true);
                 return;
             }
 
@@ -194,21 +197,22 @@ namespace USharpVideoQueue.Runtime
             synchronizeData();
             clearVideoPlayer();
 
-            //TODO: QueueCallbackEvent(OnUSharpVideoQueueCleared); 
+            SendCallback(OnUSharpVideoQueueCleared, true);
         }
 
         [NetworkCallable]
         public void OnMoveVideoRequested(int playerID, int index, bool directionUp)
         {
             logDebug(
-                $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}", true);
+                $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}",
+                true);
 
             if (!IsPlayerAbleToMoveVideo(playerID, index, directionUp))
             {
                 logRequestDenied(nameof(MoveVideo), playerID);
                 return;
             }
-            
+
             if (directionUp) moveUpVideoData(index);
             else moveDownVideoData(index);
         }
@@ -222,7 +226,7 @@ namespace USharpVideoQueue.Runtime
                 logRequestDenied(nameof(RemoveVideo), playerID);
                 return;
             }
-           
+
             removeVideo(index);
         }
 
@@ -237,18 +241,18 @@ namespace USharpVideoQueue.Runtime
                 logRequestDenied(nameof(SetVideoLimitPerUser), playerID);
                 return;
             }
-            
+
             if (limit < 0) return;
             videoLimitPerUser = limit;
             synchronizeData();
-            //QueueCallbackEvent(OnUSharpVideoQueueVideoLimitPerUserChanged);
+            SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
         [NetworkCallable]
         public void OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
             logDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
-            
+
             if (!playerWithIDHasElevatedRights(playerID))
             {
                 logRequestDenied(nameof(SetVideoLimitPerUserEnabled), playerID);
@@ -257,14 +261,14 @@ namespace USharpVideoQueue.Runtime
 
             videoLimitPerUserEnabled = enabled;
             synchronizeData();
-            //QueueCallbackEvent(OnUSharpVideoQueueVideoLimitPerUserChanged);
+            SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
         [NetworkCallable]
         public void OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
             logDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
-            
+
             if (!playerWithIDHasElevatedRights(playerID))
             {
                 logRequestDenied(nameof(SetCustomUrlInputEnabled), playerID);
@@ -273,7 +277,7 @@ namespace USharpVideoQueue.Runtime
 
             customUrlInputEnabled = enabled;
             synchronizeData();
-            //QueueCallbackEvent(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled);
+            SendCallback(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled, true);
         }
 
         // Player Coordination
@@ -299,9 +303,16 @@ namespace USharpVideoQueue.Runtime
 
             removeVideoData(0);
 
-            if (IsEmpty(queuedVideos)) clearVideoPlayer();
-            else MakePlayerPlayFirst();
-            //TODO: QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);   
+            if (IsEmpty(queuedVideos))
+            {
+                clearVideoPlayer();
+                SendCallback(OnUSharpVideoQueueFinalVideoEnded, true);
+            }
+            else
+            {
+                SendCallback(OnUSharpVideoQueueVideoEnded, true);
+                MakePlayerPlayFirst();
+            }
         }
 
         [NetworkCallable]
@@ -328,6 +339,7 @@ namespace USharpVideoQueue.Runtime
             VideoOwnerIsWaitingForPlayback = false;
             synchronizeData();
             SkipToNextVideo();
+            SendCallback(OnUSharpVideoQueueSkippedError, true);
         }
 
         [NetworkCallable]
@@ -471,7 +483,10 @@ namespace USharpVideoQueue.Runtime
         internal void removeVideo(int index, bool force = false)
         {
             if (index == 0)
+            {
                 SkipToNextVideo(force);
+                SendCallback(OnUSharpVideoQueueCurrentVideoRemoved, true);
+            }
             else
                 removeVideoData(index);
         }
@@ -542,7 +557,7 @@ namespace USharpVideoQueue.Runtime
         }
 
         //Logging utilities
-        
+
         internal void logDebug(string message, bool broadcast = false)
         {
             if (!enableDebug) return;
@@ -551,6 +566,7 @@ namespace USharpVideoQueue.Runtime
             else
                 Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
+
         public void ReceiveBroadcastDebug(string message) => logDebug(message);
 
         internal void logWarning(string message, bool broadcast = false)
@@ -560,6 +576,7 @@ namespace USharpVideoQueue.Runtime
             else
                 Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
         }
+
         public void ReceiveBroadcastWarning(string message) => logWarning(message);
 
         internal void logError(string message, bool broadcast = false)
@@ -569,6 +586,7 @@ namespace USharpVideoQueue.Runtime
             else
                 Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
+
         public void ReceiveBroadcastError(string message) => logWarning(message);
 
         internal void logRequestDenied(string requestName, int playerId)
@@ -712,8 +730,14 @@ namespace USharpVideoQueue.Runtime
         }
 
         [RecursiveMethod]
-        internal virtual void SendCallback(string callbackName)
+        internal virtual void SendCallback(string callbackName, bool broadcast = false)
         {
+            if (broadcast)
+            {
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastCallback), callbackName);
+                return;
+            }
+
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
                 if (!UdonSharpBehaviour.Equals(callbackName, null))
@@ -723,5 +747,7 @@ namespace USharpVideoQueue.Runtime
                 }
             }
         }
+
+        public void ReceiveBroadcastCallback(string callbackName) => SendCallback(callbackName);
     }
 }
