@@ -153,7 +153,22 @@ namespace USharpVideoQueue.Runtime
 
             if (url == null || !Validation.ValidateURL(url.Get()))
             {
-                logWarning($"Video with title '{title}' was not queued because the URL format was invalid!");
+                logWarning(
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the URL format was invalid!");
+                return;
+            }
+
+            if (!IsPlayerPermittedToQueueVideo(playerID))
+            {
+                logWarning(
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the player reached their personal limit!");
+                return;
+            }
+
+            if (Count(queuedVideos) >= maxQueueItems)
+            {
+                logWarning(
+                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the queue is full!");
                 return;
             }
 
@@ -166,6 +181,12 @@ namespace USharpVideoQueue.Runtime
         public void OnClearRequested(int playerID)
         {
             logDebug($"OnClearRequested from Player {playerID}");
+
+            if (!playerWithIDHasElevatedRights(playerID))
+            {
+                logRequestDenied(nameof(Clear), playerID);
+                return;
+            }
 
             QueueArray.Clear(queuedVideos);
             QueueArray.Clear(queuedTitles);
@@ -182,6 +203,12 @@ namespace USharpVideoQueue.Runtime
             logDebug(
                 $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}");
 
+            if (!IsPlayerAbleToMoveVideo(playerID, index, directionUp))
+            {
+                logRequestDenied(nameof(MoveVideo), playerID);
+                return;
+            }
+            
             if (directionUp) moveUpVideoData(index);
             else moveDownVideoData(index);
         }
@@ -190,6 +217,12 @@ namespace USharpVideoQueue.Runtime
         public void OnRemoveVideoRequested(int playerID, int index)
         {
             logDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}");
+            if (!IsPlayerPermittedToRemoveVideo(playerID, index))
+            {
+                logRequestDenied(nameof(RemoveVideo), playerID);
+                return;
+            }
+           
             removeVideo(index);
         }
 
@@ -199,6 +232,12 @@ namespace USharpVideoQueue.Runtime
         {
             logDebug($"OnSetVideoLimitPerUserRequested from Player {playerID}: Limit = {limit}");
 
+            if (!playerWithIDHasElevatedRights(playerID))
+            {
+                logRequestDenied(nameof(SetVideoLimitPerUser), playerID);
+                return;
+            }
+            
             if (limit < 0) return;
             videoLimitPerUser = limit;
             synchronizeData();
@@ -209,6 +248,12 @@ namespace USharpVideoQueue.Runtime
         public void OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
             logDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}");
+            
+            if (!playerWithIDHasElevatedRights(playerID))
+            {
+                logRequestDenied(nameof(SetVideoLimitPerUserEnabled), playerID);
+                return;
+            }
 
             videoLimitPerUserEnabled = enabled;
             synchronizeData();
@@ -219,6 +264,12 @@ namespace USharpVideoQueue.Runtime
         public void OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
             logDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}");
+            
+            if (!playerWithIDHasElevatedRights(playerID))
+            {
+                logRequestDenied(nameof(SetCustomUrlInputEnabled), playerID);
+                return;
+            }
 
             customUrlInputEnabled = enabled;
             synchronizeData();
@@ -237,7 +288,7 @@ namespace USharpVideoQueue.Runtime
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(InvokeUserPlay),
                 videoOwnerPlayerID, nextURL);
         }
-        
+
         public void SkipToNextVideo(bool force = false)
         {
             if (VideoOwnerIsWaitingForPlayback && !force)
@@ -247,8 +298,8 @@ namespace USharpVideoQueue.Runtime
             }
 
             removeVideoData(0);
-            
-            if(IsEmpty(queuedVideos)) clearVideoPlayer();
+
+            if (IsEmpty(queuedVideos)) clearVideoPlayer();
             else MakePlayerPlayFirst();
             //TODO: QueueCallbackEvent(OnUSharpVideoQueueCurrentVideoRemoved);   
         }
@@ -503,6 +554,12 @@ namespace USharpVideoQueue.Runtime
             Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
 
+        internal void logRequestDenied(string requestName, int playerId)
+        {
+            logWarning(
+                $"'{requestName}'-Request by user with ID {playerId} has been denied!");
+        }
+
         /* VRC SDK wrapper functions to enable mocking for tests */
 
         internal virtual bool isMaster() => Networking.IsMaster;
@@ -528,7 +585,7 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if (!isOwner()) return; 
+            if (!isOwner()) return;
             removeVideosOfPlayerWhoLeft(getPlayerID(player));
         }
 
