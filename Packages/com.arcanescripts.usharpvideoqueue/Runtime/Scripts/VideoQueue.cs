@@ -647,7 +647,8 @@ namespace USharpVideoQueue.Runtime
 
         internal void _RemoveVideosOfPlayerWhoLeft(int leftPlayerID)
         {
-            _LogDebug($"Clearing all videos of leaving player {_GetPlayerInfo(leftPlayerID)}");
+            _LogDebug($"Clearing all videos of leaving player {_GetPlayerInfo(leftPlayerID)}", true);
+            _LogOwnerAndMaster();
             for (int i = Count(queuedVideos) - 1; i >= 0; i--)
             {
                 int videoOwnerPlayerID = GetVideoOwner(i);
@@ -688,7 +689,7 @@ namespace USharpVideoQueue.Runtime
             if (broadcast)
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastDebug), message);
             else
-                Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
+                Debug.Log($"[<color=#00A8FF>USharpVideoQueue</color>] Debug: {message}");
         }
 
         /// <summary>
@@ -704,7 +705,7 @@ namespace USharpVideoQueue.Runtime
             if (broadcast)
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastWarning), message);
             else
-                Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
+                Debug.LogWarning($"[<color=#00A8FF>USharpVideoQueue</color>] Warning: {message}");
         }
 
         /// <summary>
@@ -720,7 +721,7 @@ namespace USharpVideoQueue.Runtime
             if (broadcast)
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastError), message);
             else
-                Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
+                Debug.LogError($"[<color=#00A8FF>USharpVideoQueue</color>] Error: {message}");
         }
 
         /// <summary>
@@ -740,8 +741,13 @@ namespace USharpVideoQueue.Runtime
         private void _LogRequest(string requestName, int playerId, params object[] parameters)
         {
             string message =
-                $"'{requestName}'-Request received from Player {_GetPlayerInfo(playerId)} with parameters: ";
-            foreach (var parameter in parameters) message += $"{parameter}, ";
+                $"'{requestName}'-Request received from Player {_GetPlayerInfo(playerId)}";
+            if (parameters != null && parameters.Length > 0)
+            {
+                message += " with parameters:";
+                foreach (var parameter in parameters) message += $"{parameter}, ";
+            }
+
             _LogDebug(message, true);
         }
 
