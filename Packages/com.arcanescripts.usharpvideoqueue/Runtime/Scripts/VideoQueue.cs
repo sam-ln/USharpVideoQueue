@@ -941,9 +941,11 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
         /// Receives a broadcast callback name and forwards it to all locally registered receivers.
         /// </summary>
         /// <param name="callbackName">The name of the callback to invoke.</param>
+        [NetworkCallable]
         public void ReceiveBroadcastCallback(string callbackName) => SendCallback(callbackName);
     }
 }
