@@ -58,7 +58,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.OnUSharpVideoPlay();
             queue.QueueVideo(url2);
             //Queued Video were serialized to other players
-            queueMock.Verify(queue => queue.synchronizeData(), Times.AtLeast(2));
+            queueMock.Verify(queue => queue._SynchronizeData(), Times.AtLeast(2));
             //Video Player has played first url
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             queue.SendCustomEvent("OnUSharpVideoEnd");

@@ -49,7 +49,7 @@ namespace USharpVideoQueue.Tests.Runtime
             //enqueue as player 1
             queue1.QueueVideo(url1);
             //player 1 leaves
-            queue0.becomeOwner();
+            queue0._BecomeOwner();
             MockGroup.SimulatePlayerLeft(1);
             //Only 1 video remains
             Assert.AreEqual(1, QueueArray.Count(queue0.queuedVideos));
@@ -66,7 +66,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queue0.QueueVideo(url0);
 
             //player 0 leaves
-            queue1.becomeOwner();
+            queue1._BecomeOwner();
             MockGroup.SimulatePlayerLeft(0);
             Assert.AreEqual(0, queue1.QueuedVideosCount());
 

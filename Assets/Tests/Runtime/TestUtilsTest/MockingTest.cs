@@ -29,8 +29,8 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
         public void TestSerialization()
         {
             //Test if I can check for calls to RequestSerialization() though mocking
-            queue1.synchronizeData();
-            queueMock1.Verify(queue => queue.synchronizeData(), Times.Once);
+            queue1._SynchronizeData();
+            queueMock1.Verify(queue => queue._SynchronizeData(), Times.Once);
 
         }
 

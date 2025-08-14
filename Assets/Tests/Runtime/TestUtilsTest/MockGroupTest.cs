@@ -21,16 +21,16 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
         [Test]
         public void CorrectDefaultOwnership()
         {
-            Assert.True(queue1.isOwner());
-            Assert.False(queue2.isOwner());
+            Assert.True(queue1._IsOwner());
+            Assert.False(queue2._IsOwner());
         }
 
         [Test]
         public void TransferOwnership()
         {
-           queue2.becomeOwner();
-           Assert.True(queue2.isOwner());
-           Assert.False(queue1.isOwner());
+           queue2._BecomeOwner();
+           Assert.True(queue2._IsOwner());
+           Assert.False(queue1._IsOwner());
         }
         
         
@@ -40,7 +40,7 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
             foreach (var mockSet in MockGroup.MockSets)
             {
                 VideoQueue queue = mockSet.VideoQueueMock.Object;
-                Assert.AreEqual(queue.getPlayerID(queue.getLocalPlayer()),mockSet.PlayerId);
+                Assert.AreEqual(queue._GetPlayerID(queue._GetLocalPlayer()),mockSet.PlayerId);
             }
            
         }
@@ -53,7 +53,7 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
                 VideoQueue queue = mockSet.VideoQueueMock.Object;
                 foreach (var remoteMockSet in MockGroup.MockSets)
                 {
-                    Assert.AreEqual(queue.getPlayerID(remoteMockSet.Player), remoteMockSet.PlayerId);
+                    Assert.AreEqual(queue._GetPlayerID(remoteMockSet.Player), remoteMockSet.PlayerId);
                 }
             }
            
@@ -63,9 +63,9 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtilsTest
         public void RemovePlayer()
         {
             int removedPlayer = MockGroup.MockSets[0].PlayerId;
-            Assert.AreEqual(true,queue2.isPlayerWithIDValid(removedPlayer));
+            Assert.AreEqual(true,queue2._IsPlayerWithIDValid(removedPlayer));
             MockGroup.SimulatePlayerLeft(removedPlayer);
-            Assert.AreEqual(false,queue2.isPlayerWithIDValid(removedPlayer));
+            Assert.AreEqual(false,queue2._IsPlayerWithIDValid(removedPlayer));
         }
         
         

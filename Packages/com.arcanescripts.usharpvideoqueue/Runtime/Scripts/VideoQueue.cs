@@ -85,11 +85,11 @@ namespace USharpVideoQueue.Runtime
 
             if (Equals(VideoPlayer, null))
             {
-                logError("VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
+                _LogError("VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
             }
 
             initialized = true;
-            localPlayerId = getPlayerID(getLocalPlayer());
+            localPlayerId = _GetPlayerID(_GetLocalPlayer());
 
             if (registeredCallbackReceivers == null)
             {
@@ -108,8 +108,8 @@ namespace USharpVideoQueue.Runtime
                 queuedByPlayer[i] = -1;
             }
 
-            logDebug(
-                $"USharpVideoQueue initialized! Local Player ID is {localPlayerId}. You are {(isOwner() ? "" : "not ")}the owner!");
+            _LogDebug(
+                $"USharpVideoQueue initialized! Local Player ID is {localPlayerId}. You are {(_IsOwner() ? "" : "not ")}the owner!");
         }
 
         // Request Sending Methods
@@ -149,11 +149,11 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void OnQueueVideoRequested(int playerID, VRCUrl url, string title)
         {
-            logDebug($"OnQueueVideoRequested from Player {playerID}: {title} ({url})", true);
+            _LogDebug($"OnQueueVideoRequested from Player {playerID}: {title} ({url})", true);
 
             if (url == null || !Validation.ValidateURL(url.Get()))
             {
-                logWarning(
+                _LogWarning(
                     $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the URL format was invalid!",
                     true);
                 return;
@@ -161,7 +161,7 @@ namespace USharpVideoQueue.Runtime
 
             if (!IsPlayerPermittedToQueueVideo(playerID))
             {
-                logWarning(
+                _LogWarning(
                     $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the player reached their personal limit!",
                     true);
                 return;
@@ -169,33 +169,33 @@ namespace USharpVideoQueue.Runtime
 
             if (Count(queuedVideos) >= maxQueueItems)
             {
-                logWarning(
+                _LogWarning(
                     $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the queue is full!",
                     true);
                 return;
             }
 
             bool wasEmpty = IsEmpty(queuedVideos);
-            enqueueVideoData(url, title, playerID);
+            _EnqueueVideoData(url, title, playerID);
             if (wasEmpty) MakePlayerPlayFirst();
         }
 
         [NetworkCallable]
         public void OnClearRequested(int playerID)
         {
-            logDebug($"OnClearRequested from Player {playerID}", true);
+            _LogDebug($"OnClearRequested from Player {playerID}", true);
 
-            if (!playerWithIDHasElevatedRights(playerID))
+            if (!_PlayerWithIDHasElevatedRights(playerID))
             {
-                logRequestDenied(nameof(Clear), playerID);
+                _LogRequestDenied(nameof(Clear), playerID);
                 return;
             }
 
             QueueArray.Clear(queuedVideos);
             QueueArray.Clear(queuedTitles);
             QueueArray.Clear(queuedByPlayer);
-            synchronizeData();
-            clearVideoPlayer();
+            _SynchronizeData();
+            _ClearVideoPlayer();
 
             SendCallback(OnUSharpVideoQueueCleared, true);
         }
@@ -203,80 +203,80 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void OnMoveVideoRequested(int playerID, int index, bool directionUp)
         {
-            logDebug(
+            _LogDebug(
                 $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}",
                 true);
 
             if (!IsPlayerAbleToMoveVideo(playerID, index, directionUp))
             {
-                logRequestDenied(nameof(MoveVideo), playerID);
+                _LogRequestDenied(nameof(MoveVideo), playerID);
                 return;
             }
 
-            if (directionUp) moveUpVideoData(index);
-            else moveDownVideoData(index);
+            if (directionUp) _MoveUpVideoData(index);
+            else _MoveDownVideoData(index);
         }
 
         [NetworkCallable]
         public void OnRemoveVideoRequested(int playerID, int index)
         {
-            logDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}", true);
+            _LogDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}", true);
             if (!IsPlayerPermittedToRemoveVideo(playerID, index))
             {
-                logRequestDenied(nameof(RemoveVideo), playerID);
+                _LogRequestDenied(nameof(RemoveVideo), playerID);
                 return;
             }
 
-            removeVideo(index);
+            _RemoveVideo(index);
         }
 
 
         [NetworkCallable]
         public void OnSetVideoLimitPerUserRequested(int playerID, int limit)
         {
-            logDebug($"OnSetVideoLimitPerUserRequested from Player {playerID}: Limit = {limit}", true);
+            _LogDebug($"OnSetVideoLimitPerUserRequested from Player {playerID}: Limit = {limit}", true);
 
-            if (!playerWithIDHasElevatedRights(playerID))
+            if (!_PlayerWithIDHasElevatedRights(playerID))
             {
-                logRequestDenied(nameof(SetVideoLimitPerUser), playerID);
+                _LogRequestDenied(nameof(SetVideoLimitPerUser), playerID);
                 return;
             }
 
             if (limit < 0) return;
             videoLimitPerUser = limit;
-            synchronizeData();
+            _SynchronizeData();
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
         [NetworkCallable]
         public void OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
-            logDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
+            _LogDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
 
-            if (!playerWithIDHasElevatedRights(playerID))
+            if (!_PlayerWithIDHasElevatedRights(playerID))
             {
-                logRequestDenied(nameof(SetVideoLimitPerUserEnabled), playerID);
+                _LogRequestDenied(nameof(SetVideoLimitPerUserEnabled), playerID);
                 return;
             }
 
             videoLimitPerUserEnabled = enabled;
-            synchronizeData();
+            _SynchronizeData();
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
         [NetworkCallable]
         public void OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
-            logDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
+            _LogDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
 
-            if (!playerWithIDHasElevatedRights(playerID))
+            if (!_PlayerWithIDHasElevatedRights(playerID))
             {
-                logRequestDenied(nameof(SetCustomUrlInputEnabled), playerID);
+                _LogRequestDenied(nameof(SetCustomUrlInputEnabled), playerID);
                 return;
             }
 
             customUrlInputEnabled = enabled;
-            synchronizeData();
+            _SynchronizeData();
             SendCallback(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled, true);
         }
 
@@ -297,15 +297,15 @@ namespace USharpVideoQueue.Runtime
         {
             if (VideoOwnerIsWaitingForPlayback && !force)
             {
-                logWarning("Couldn't remove first video because video owner is loading!", true);
+                _LogWarning("Couldn't remove first video because video owner is loading!", true);
                 return;
             }
 
-            removeVideoData(0);
+            _RemoveVideoData(0);
 
             if (IsEmpty(queuedVideos))
             {
-                clearVideoPlayer();
+                _ClearVideoPlayer();
                 SendCallback(OnUSharpVideoQueueFinalVideoEnded, true);
             }
             else
@@ -318,7 +318,7 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void InvokeUserPlay(int playerID, VRCUrl url)
         {
-            logDebug($"OnUserPlayURLInvoked sent to Player {playerID}: {url.Get()}", true);
+            _LogDebug($"OnUserPlayURLInvoked sent to Player {playerID}: {url.Get()}", true);
 
             if (localPlayerId != playerID) return;
 
@@ -328,16 +328,16 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void OnVideoOwnerVideoEnd(int playerID)
         {
-            logDebug($"OnVideoOwnerVideoEnd received from Player {playerID}", true);
+            _LogDebug($"OnVideoOwnerVideoEnd received from Player {playerID}", true);
             SkipToNextVideo();
         }
 
         [NetworkCallable]
         public void OnVideoOwnerVideoError(int playerID)
         {
-            logDebug($"OnVideoOwnerVideoError received from Player {playerID}", true);
+            _LogDebug($"OnVideoOwnerVideoError received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = false;
-            synchronizeData();
+            _SynchronizeData();
             SkipToNextVideo();
             SendCallback(OnUSharpVideoQueueSkippedError, true);
         }
@@ -345,18 +345,18 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void OnVideoOwnerVideoLoadStart(int playerID)
         {
-            logDebug($"OnVideoOwnerVideoLoadStart received from Player {playerID}", true);
+            _LogDebug($"OnVideoOwnerVideoLoadStart received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = true;
             // TODO: Timeout?
-            synchronizeData();
+            _SynchronizeData();
         }
 
         [NetworkCallable]
         public void OnVideoOwnerVideoPlay(int playerID)
         {
-            logDebug($"OnVideoOwnerVideoPlay received from Player {playerID}", true);
+            _LogDebug($"OnVideoOwnerVideoPlay received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = false;
-            synchronizeData();
+            _SynchronizeData();
         }
 
 
@@ -373,7 +373,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public VRCUrl GetURL(int index)
         {
-            if (!isIndexValid(index)) return VRCUrl.Empty;
+            if (!_IsIndexValid(index)) return VRCUrl.Empty;
             return queuedVideos[index];
         }
 
@@ -382,7 +382,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public string GetTitle(int index)
         {
-            if (!isIndexValid(index)) return string.Empty;
+            if (!_IsIndexValid(index)) return string.Empty;
             return queuedTitles[index];
         }
 
@@ -391,7 +391,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public int GetVideoOwner(int index)
         {
-            if (!isIndexValid(index)) return -1;
+            if (!_IsIndexValid(index)) return -1;
             return queuedByPlayer[index];
         }
 
@@ -401,7 +401,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool IsPlayerPermittedToRemoveVideo(int playerID, int index)
         {
-            if (playerWithIDHasElevatedRights(playerID)) return true;
+            if (_PlayerWithIDHasElevatedRights(playerID)) return true;
             return GetVideoOwner(index) == playerID;
         }
 
@@ -410,7 +410,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool IsPlayerAbleToMoveVideo(int playerID, int index, bool directionUp)
         {
-            if (!playerWithIDHasElevatedRights(playerID)) return false;
+            if (!_PlayerWithIDHasElevatedRights(playerID)) return false;
 
             // Index constrains moving upwards
             if (directionUp && (index > QueuedVideosCount() - 1 || index <= 0)) return false;
@@ -430,7 +430,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool IsPlayerPermittedToQueueVideo(int playerID)
         {
-            if (playerWithIDHasElevatedRights(playerID) || !videoLimitPerUserEnabled) return true;
+            if (_PlayerWithIDHasElevatedRights(playerID) || !videoLimitPerUserEnabled) return true;
             return QueuedVideosCountByUser(playerID) < videoLimitPerUser;
         }
 
@@ -441,7 +441,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public bool IsPlayerPermittedToQueueCustomVideos(int playerID)
         {
-            return playerWithIDHasElevatedRights(playerID) || customUrlInputEnabled;
+            return _PlayerWithIDHasElevatedRights(playerID) || customUrlInputEnabled;
         }
 
         /// <summary>
@@ -463,24 +463,31 @@ namespace USharpVideoQueue.Runtime
 
         public override void OnDeserialization()
         {
-            logDebug("OnDeserialization run!");
+            _LogDebug("OnDeserialization run!");
             OnQueueContentChange();
         }
 
         public override void OnPreSerialization()
         {
-            logDebug("Sending Serialized Data!");
+            _LogDebug("Sending Serialized Data!");
+        }
+        
+        internal virtual void _SynchronizeData()
+        {
+            Debug.Assert(_IsOwner());
+            RequestSerialization();
+            OnQueueContentChange();
         }
 
-        internal void enqueueVideoData(VRCUrl url, string title, int playerId)
+        internal void _EnqueueVideoData(VRCUrl url, string title, int playerId)
         {
             Enqueue(queuedVideos, url);
             Enqueue(queuedTitles, title);
             Enqueue(queuedByPlayer, playerId);
-            synchronizeData();
+            _SynchronizeData();
         }
 
-        internal void removeVideo(int index, bool force = false)
+        internal void _RemoveVideo(int index, bool force = false)
         {
             if (index == 0)
             {
@@ -488,56 +495,56 @@ namespace USharpVideoQueue.Runtime
                 SendCallback(OnUSharpVideoQueueCurrentVideoRemoved, true);
             }
             else
-                removeVideoData(index);
+                _RemoveVideoData(index);
         }
 
-        internal void removeVideoData(int index)
+        internal void _RemoveVideoData(int index)
         {
             if (index >= QueuedVideosCount()) return;
 
             Remove(queuedVideos, index);
             Remove(queuedTitles, index);
             Remove(queuedByPlayer, index);
-            synchronizeData();
+            _SynchronizeData();
         }
 
-        internal void moveUpVideoData(int index)
+        internal void _MoveUpVideoData(int index)
         {
             MoveUp(queuedVideos, index);
             MoveUp(queuedTitles, index);
             MoveUp(queuedByPlayer, index);
-            synchronizeData();
+            _SynchronizeData();
         }
 
-        internal void moveDownVideoData(int index)
+        internal void _MoveDownVideoData(int index)
         {
             MoveDown(queuedVideos, index);
             MoveDown(queuedTitles, index);
             MoveDown(queuedByPlayer, index);
-            synchronizeData();
+            _SynchronizeData();
         }
 
 
-        internal void clearVideoPlayer()
+        internal void _ClearVideoPlayer()
         {
             VideoPlayer.TakeOwnership();
             VideoPlayer.StopVideo();
         }
 
-        internal void removeVideosOfPlayerWhoLeft(int leftPlayerID)
+        internal void _RemoveVideosOfPlayerWhoLeft(int leftPlayerID)
         {
             for (int i = Count(queuedVideos) - 1; i >= 0; i--)
             {
                 int videoOwnerPlayerID = GetVideoOwner(i);
                 //VRChat is inconsistent with the VRCPlayerApi objects of players who just left (sometimes valid, sometimes null)
                 //This why we check against both the validity of the video owner VRCPlayerApi object and their ID.
-                if (videoOwnerPlayerID == leftPlayerID || !isPlayerWithIDValid(videoOwnerPlayerID))
+                if (videoOwnerPlayerID == leftPlayerID || !_IsPlayerWithIDValid(videoOwnerPlayerID))
                 {
-                    logDebug(
+                    _LogDebug(
                         $"Removing video {queuedTitles[i]} with URL {queuedVideos[i]} because owner with Player-ID {leftPlayerID} has left the instance! " +
                         $"Owner of the queue is currently {Networking.GetOwner(gameObject).playerId}." +
                         $" Instance master is currently {Networking.Master.playerId}", true);
-                    removeVideo(i, true);
+                    _RemoveVideo(i, true);
                 }
             }
         }
@@ -545,20 +552,20 @@ namespace USharpVideoQueue.Runtime
         /// <summary>
         /// Override this function to integrate with other permission systems!
         /// </summary>
-        protected virtual bool playerWithIDHasElevatedRights(int id)
+        protected virtual bool _PlayerWithIDHasElevatedRights(int id)
         {
-            if (!isPlayerWithIDValid(id)) return false;
+            if (!_IsPlayerWithIDValid(id)) return false;
             return VRCPlayerApi.GetPlayerById(id).isMaster;
         }
 
-        internal bool isIndexValid(int index)
+        internal bool _IsIndexValid(int index)
         {
             return index < QueuedVideosCount() && index >= 0;
         }
 
         //Logging utilities
 
-        internal void logDebug(string message, bool broadcast = false)
+        internal void _LogDebug(string message, bool broadcast = false)
         {
             if (!enableDebug) return;
             if (broadcast)
@@ -567,9 +574,9 @@ namespace USharpVideoQueue.Runtime
                 Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
 
-        public void ReceiveBroadcastDebug(string message) => logDebug(message);
+        public void ReceiveBroadcastDebug(string message) => _LogDebug(message);
 
-        internal void logWarning(string message, bool broadcast = false)
+        internal void _LogWarning(string message, bool broadcast = false)
         {
             if (broadcast)
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastWarning), message);
@@ -577,9 +584,9 @@ namespace USharpVideoQueue.Runtime
                 Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
         }
 
-        public void ReceiveBroadcastWarning(string message) => logWarning(message);
+        public void ReceiveBroadcastWarning(string message) => _LogWarning(message);
 
-        internal void logError(string message, bool broadcast = false)
+        internal void _LogError(string message, bool broadcast = false)
         {
             if (broadcast)
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastError), message);
@@ -587,41 +594,33 @@ namespace USharpVideoQueue.Runtime
                 Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
 
-        public void ReceiveBroadcastError(string message) => logWarning(message);
+        public void ReceiveBroadcastError(string message) => _LogWarning(message);
 
-        internal void logRequestDenied(string requestName, int playerId)
+        internal void _LogRequestDenied(string requestName, int playerId)
         {
-            logWarning(
+            _LogWarning(
                 $"'{requestName}'-Request by user with ID {playerId} has been denied!", true);
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */
 
-        internal virtual bool isMaster() => Networking.IsMaster;
+        internal virtual bool _IsMaster() => Networking.IsMaster;
+        internal virtual void _BecomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
+        internal virtual bool _IsOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
+        internal virtual VRCPlayerApi _GetLocalPlayer() => Networking.LocalPlayer;
+        internal virtual int _GetPlayerID(VRCPlayerApi player) => player.playerId;
 
-        internal virtual void synchronizeData()
-        {
-            Debug.Assert(isOwner());
-            RequestSerialization();
-            OnQueueContentChange();
-        }
+        internal virtual bool _IsPlayerWithIDValid(int id) => Utilities.IsValid(VRCPlayerApi.GetPlayerById(id));
 
-        internal virtual void becomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
-        internal virtual bool isOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
-        internal virtual VRCPlayerApi getLocalPlayer() => Networking.LocalPlayer;
-        internal virtual int getPlayerID(VRCPlayerApi player) => player.playerId;
-
-        internal virtual bool isPlayerWithIDValid(int id) => Utilities.IsValid(VRCPlayerApi.GetPlayerById(id));
-
-        internal virtual bool isVideoPlayerOwner() =>
+        internal virtual bool _IsVideoPlayerOwner() =>
             Networking.IsOwner(Networking.LocalPlayer, VideoPlayer.gameObject);
 
         /* VRC Runtime Events */
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            if (!isOwner()) return;
-            removeVideosOfPlayerWhoLeft(getPlayerID(player));
+            if (!_IsOwner()) return;
+            _RemoveVideosOfPlayerWhoLeft(_GetPlayerID(player));
         }
 
         /* USharpVideoQueue Emitted Callbacks */
@@ -635,31 +634,31 @@ namespace USharpVideoQueue.Runtime
 
         public virtual void OnUSharpVideoEnd()
         {
-            logDebug($"Received USharpVideoEnd! Is player Video Player owner? {isVideoPlayerOwner()}");
-            if (isVideoPlayerOwner())
+            _LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {_IsVideoPlayerOwner()}");
+            if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoEnd), localPlayerId);
         }
 
         public void OnUSharpVideoError()
         {
-            logDebug($"Received USharpVideoError! Is player Video Player owner? {isVideoPlayerOwner()}");
-            if (isVideoPlayerOwner())
+            _LogDebug($"Received USharpVideoError! Is player Video Player owner? {_IsVideoPlayerOwner()}");
+            if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoError),
                     localPlayerId);
         }
 
         public void OnUSharpVideoLoadStart()
         {
-            logDebug($"Received USharpVideoLoadStart! Is player Video Player owner? {isVideoPlayerOwner()}");
-            if (isVideoPlayerOwner())
+            _LogDebug($"Received USharpVideoLoadStart! Is player Video Player owner? {_IsVideoPlayerOwner()}");
+            if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoLoadStart),
                     localPlayerId);
         }
 
         public void OnUSharpVideoPlay()
         {
-            logDebug($"Received USharpVideoPlay! Is player Video Player owner? {isVideoPlayerOwner()}");
-            if (isVideoPlayerOwner())
+            _LogDebug($"Received USharpVideoPlay! Is player Video Player owner? {_IsVideoPlayerOwner()}");
+            if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoPlay),
                     localPlayerId);
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
@@ -743,7 +742,7 @@ namespace USharpVideoQueue.Runtime
                 if (!UdonSharpBehaviour.Equals(callbackName, null))
                 {
                     callbackReceiver.SendCustomEvent(callbackName);
-                    logDebug($"Sent Callback '{callbackName}'");
+                    _LogDebug($"Sent Callback '{callbackName}'");
                 }
             }
         }

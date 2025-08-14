@@ -82,17 +82,17 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
                 },
                 ServerTime = 0
             };
-            queueMock.Setup(queue => queue.getLocalPlayer()).Returns(mockSet.Player);
-            queueMock.Setup(queue => queue.getPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
+            queueMock.Setup(queue => queue._GetLocalPlayer()).Returns(mockSet.Player);
+            queueMock.Setup(queue => queue._GetPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
             queueMock.Object.Start();
             return mockSet;
         }
 
         public static void MockDummySDKBehavior(Mock<VideoQueue> queueMock)
         {
-            queueMock.Setup(queue => queue.isOwner()).Returns(true);
-            queueMock.Setup(queue => queue.isVideoPlayerOwner()).Returns(true);
-            queueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
+            queueMock.Setup(queue => queue._IsOwner()).Returns(true);
+            queueMock.Setup(queue => queue._IsVideoPlayerOwner()).Returns(true);
+            queueMock.Setup(queue => queue._GetPlayerID(It.IsAny<VRCPlayerApi>())).Returns(1);
         }
 
         public class VideoQueueMockSet
@@ -154,17 +154,17 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
             {
                 foreach (var mockSet in MockSets)
                 {
-                    mockSet.VideoQueueMock.Setup((queue => queue.synchronizeData()))
+                    mockSet.VideoQueueMock.Setup((queue => queue._SynchronizeData()))
                         .Callback(() => { SerializeGroup(mockSet); });
 
-                    mockSet.VideoQueueMock.Setup(queue => queue.isOwner()).Returns(() => mockSet == Owner);
-                    mockSet.VideoQueueMock.Setup(queue => queue.becomeOwner()).Callback(() => Owner = mockSet);
-                    mockSet.VideoQueueMock.Setup(queue => queue.getPlayerID(It.IsAny<VRCPlayerApi>())).Returns(
+                    mockSet.VideoQueueMock.Setup(queue => queue._IsOwner()).Returns(() => mockSet == Owner);
+                    mockSet.VideoQueueMock.Setup(queue => queue._BecomeOwner()).Callback(() => Owner = mockSet);
+                    mockSet.VideoQueueMock.Setup(queue => queue._GetPlayerID(It.IsAny<VRCPlayerApi>())).Returns(
                         (VRCPlayerApi player) => GetMockedPlayerId(player));
-                    mockSet.VideoQueueMock.Setup(queue => queue.isVideoPlayerOwner())
+                    mockSet.VideoQueueMock.Setup(queue => queue._IsVideoPlayerOwner())
                         .Returns(() => ObjectOwners[USharpVideoObjectName].Equals(mockSet));
-                    mockSet.VideoQueueMock.Setup(queue => queue.isMaster()).Returns(() => mockSet.Equals(Master));
-                    mockSet.VideoQueueMock.Setup(queue => queue.isPlayerWithIDValid(It.IsAny<int>()))
+                    mockSet.VideoQueueMock.Setup(queue => queue._IsMaster()).Returns(() => mockSet.Equals(Master));
+                    mockSet.VideoQueueMock.Setup(queue => queue._IsPlayerWithIDValid(It.IsAny<int>()))
                         .Returns((int id) => MockSets.Exists(set => set.PlayerId == id));
                     mockSet.VideoPlayerMock.Setup(player => player.PlayVideo(It.IsAny<VRCUrl>()))
                         .Callback(() => ObjectOwners[USharpVideoObjectName] = mockSet);
