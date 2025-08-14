@@ -106,7 +106,7 @@ namespace USharpVideoQueue.Runtime
             }
 
             _LogDebug(
-                $"USharpVideoQueue initialized! Local Player ID is {localPlayerId}. You are {(_IsOwner() ? "" : "not ")}the owner!");
+                $"USharpVideoQueue initialized! Local Player is {_GetPlayerInfo(localPlayerId)}. You are {(_IsOwner() ? "" : "not ")}the owner!");
         }
 
         // Request Sending Methods
@@ -191,12 +191,12 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnQueueVideoRequested(int playerID, VRCUrl url, string title)
         {
-            _LogDebug($"OnQueueVideoRequested from Player {playerID}: {title} ({url})", true);
+            _LogRequest(nameof(QueueVideo), playerID, url, title);
 
             if (url == null || !Validation.ValidateURL(url.Get()))
             {
                 _LogWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the URL format was invalid!",
+                    $"Video with title '{title}', requested by player{_GetPlayerInfo(playerID)}, was not queued because the URL format was invalid!",
                     true);
                 return;
             }
@@ -204,7 +204,7 @@ namespace USharpVideoQueue.Runtime
             if (!IsPlayerPermittedToQueueVideo(playerID))
             {
                 _LogWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the player reached their personal limit!",
+                    $"Video with title '{title}', requested by player {_GetPlayerInfo(playerID)}, was not queued because the player reached their personal limit!",
                     true);
                 return;
             }
@@ -212,7 +212,7 @@ namespace USharpVideoQueue.Runtime
             if (Count(queuedVideos) >= maxQueueItems)
             {
                 _LogWarning(
-                    $"Video with title '{title}', requested by player with ID {playerID}, was not queued because the queue is full!",
+                    $"Video with title '{title}', requested by player {_GetPlayerInfo(playerID)}, was not queued because the queue is full!",
                     true);
                 return;
             }
@@ -222,15 +222,10 @@ namespace USharpVideoQueue.Runtime
             if (wasEmpty) _MakePlayerPlayFirst();
         }
 
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to clear the queue. Only executes if the requester has elevated rights.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
         [NetworkCallable]
         public void RPC_OnClearRequested(int playerID)
         {
-            _LogDebug($"OnClearRequested from Player {playerID}", true);
+            _LogRequest(nameof(Clear), playerID);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
             {
@@ -247,19 +242,10 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueCleared, true);
         }
 
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to move a video within the queue.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
-        /// <param name="index">Index of the video to move.</param>
-        /// <param name="directionUp">True to move up; false to move down.</param>
         [NetworkCallable]
         public void RPC_OnMoveVideoRequested(int playerID, int index, bool directionUp)
         {
-            _LogDebug(
-                $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}",
-                true);
+            _LogRequest(nameof(MoveVideo), playerID, index, directionUp);
 
             if (!IsPlayerAbleToMoveVideo(playerID, index, directionUp))
             {
@@ -271,16 +257,11 @@ namespace USharpVideoQueue.Runtime
             else _MoveDownVideoData(index);
         }
 
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to remove a video from the queue.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
-        /// <param name="index">Index of the video to remove.</param>
         [NetworkCallable]
         public void RPC_OnRemoveVideoRequested(int playerID, int index)
         {
-            _LogDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}", true);
+            _LogRequest(nameof(RemoveVideo), playerID, index);
+
             if (!IsPlayerPermittedToRemoveVideo(playerID, index))
             {
                 _LogRequestDenied(nameof(RemoveVideo), playerID);
@@ -290,17 +271,10 @@ namespace USharpVideoQueue.Runtime
             _RemoveVideo(index);
         }
 
-
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to change the per-user queue limit.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
-        /// <param name="limit">New non-negative per-user limit.</param>
         [NetworkCallable]
         public void RPC_OnSetVideoLimitPerUserRequested(int playerID, int limit)
         {
-            _LogDebug($"OnSetVideoLimitPerUserRequested from Player {playerID}: Limit = {limit}", true);
+            _LogRequest(nameof(SetVideoLimitPerUser), playerID, limit);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
             {
@@ -314,16 +288,10 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to enable or disable per-user queue limits.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
-        /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
         public void RPC_OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
-            _LogDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
+            _LogRequest(nameof(SetVideoLimitPerUserEnabled), playerID, enabled);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
             {
@@ -336,16 +304,10 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
-        /// <summary>
-        /// NetworkCallable. Not intended to be called externally.
-        /// Owner-side handler to enable or disable custom URL input.
-        /// </summary>
-        /// <param name="playerID">Network player ID of the requester.</param>
-        /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
         public void RPC_OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
-            _LogDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
+            _LogRequest(nameof(SetCustomUrlInputEnabled), playerID, enabled);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
             {
@@ -357,6 +319,7 @@ namespace USharpVideoQueue.Runtime
             _SynchronizeData();
             SendCallback(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled, true);
         }
+
 
         // Player Coordination
 
@@ -411,10 +374,9 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_InvokeUserPlay(int playerID, VRCUrl url)
         {
-            _LogDebug($"OnUserPlayURLInvoked sent to Player {playerID}: {url.Get()}", true);
-
             if (localPlayerId != playerID) return;
 
+            _LogDebug($"{nameof(RPC_InvokeUserPlay)} received by Player {_GetPlayerInfo(playerID)}: {url.Get()}", true);
             VideoPlayer.PlayVideo(url);
         }
 
@@ -426,7 +388,7 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnVideoOwnerVideoEnd(int playerID)
         {
-            _LogDebug($"OnVideoOwnerVideoEnd received from Player {playerID}", true);
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoEnd), playerID);
             _SkipToNextVideo();
         }
 
@@ -439,7 +401,7 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnVideoOwnerVideoError(int playerID)
         {
-            _LogDebug($"OnVideoOwnerVideoError received from Player {playerID}", true);
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoError), playerID);
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
             _SkipToNextVideo();
@@ -455,7 +417,7 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnVideoOwnerVideoLoadStart(int playerID)
         {
-            _LogDebug($"OnVideoOwnerVideoLoadStart received from Player {playerID}", true);
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoLoadStart), playerID);
             VideoOwnerIsWaitingForPlayback = true;
             // TODO: Timeout?
             _SynchronizeData();
@@ -470,7 +432,7 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnVideoOwnerVideoPlay(int playerID)
         {
-            _LogDebug($"OnVideoOwnerVideoPlay received from Player {playerID}", true);
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoPlay), playerID);
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
         }
@@ -696,7 +658,7 @@ namespace USharpVideoQueue.Runtime
                     _LogDebug(
                         $"Removing video {queuedTitles[i]} with URL {queuedVideos[i].Get()} because owner {_GetPlayerInfo(leftPlayerID)} has left the instance! ",
                         true);
-                       
+
                     _RemoveVideo(i, true);
                 }
             }
@@ -774,7 +736,15 @@ namespace USharpVideoQueue.Runtime
             _LogWarning(
                 $"'{requestName}'-Request by user with ID {playerId} has been denied!", true);
         }
-        
+
+        private void _LogRequest(string requestName, int playerId, params object[] parameters)
+        {
+            string message =
+                $"'{requestName}'-Request received from Player {_GetPlayerInfo(playerId)} with parameters: ";
+            foreach (var parameter in parameters) message += $"{parameter}, ";
+            _LogDebug(message, true);
+        }
+
         internal string _GetPlayerInfo(int playerId)
         {
             return _GetPlayerInfo(VRCPlayerApi.GetPlayerById(playerId));
@@ -782,7 +752,9 @@ namespace USharpVideoQueue.Runtime
 
         internal string _GetPlayerInfo(VRCPlayerApi player)
         {
-            return Utilities.IsValid(player) ? $"[playerId: {player.playerId}, displayName: {player.displayName}]" : "[Invalid Player]";
+            return Utilities.IsValid(player)
+                ? $"[playerId: {player.playerId}, displayName: {player.displayName}]"
+                : "[Invalid Player]";
         }
 
         internal void _LogOwnerAndMaster(bool broadcast = false)
@@ -791,7 +763,7 @@ namespace USharpVideoQueue.Runtime
             string ownerInfo = _GetPlayerInfo(owner);
             VRCPlayerApi master = Networking.Master;
             string masterInfo = _GetPlayerInfo(master);
-            
+
             _LogDebug($"\nOwner: {ownerInfo} \nMaster: {masterInfo}", broadcast);
         }
 
