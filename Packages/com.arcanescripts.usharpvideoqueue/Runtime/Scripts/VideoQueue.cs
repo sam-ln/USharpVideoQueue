@@ -47,7 +47,7 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueCustomURLsDisabled = "OnUSharpVideoQueueCustomURLsDisabled";
         public const string OnUSharpVideoQueueVideoLimitPerUserChanged = "OnUSharpVideoQueueVideoLimitPerUserChanged";
 
-        internal UdonSharpBehaviour[] registeredCallbackReceivers;
+        internal UdonSharpBehaviour[] registeredCallbackReceivers = new UdonSharpBehaviour[0];
 
         [UdonSynced] internal VRCUrl[] queuedVideos;
         [UdonSynced] internal string[] queuedTitles;
@@ -85,20 +85,17 @@ namespace USharpVideoQueue.Runtime
 
             if (Equals(VideoPlayer, null))
             {
-                _LogError("VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
+                _LogError(
+                    "Critical! VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
+                return;
             }
 
             initialized = true;
             localPlayerId = _GetPlayerID(_GetLocalPlayer());
 
-            if (registeredCallbackReceivers == null)
-            {
-                registeredCallbackReceivers = new UdonSharpBehaviour[0];
-            }
-
-            queuedVideos = new VRCUrl[maxQueueItems];
-            queuedByPlayer = new int[maxQueueItems];
-            queuedTitles = new string[maxQueueItems];
+            if (queuedVideos == null) queuedVideos = new VRCUrl[maxQueueItems];
+            if (queuedByPlayer == null) queuedByPlayer = new int[maxQueueItems];
+            if (queuedTitles == null) queuedTitles = new string[maxQueueItems];
             VideoPlayer.RegisterCallbackReceiver(this);
 
             for (int i = 0; i < maxQueueItems; i++)
@@ -619,10 +616,15 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug("Sending Serialized Data!");
         }
-        
+
         internal virtual void _SynchronizeData()
         {
-            Debug.Assert(_IsOwner());
+            if (!_IsOwner())
+            {
+                _LogError("_SynchronizeData called by non-owner!");
+                return;
+            }
+
             RequestSerialization();
             OnQueueContentChange();
         }
@@ -677,10 +679,13 @@ namespace USharpVideoQueue.Runtime
         {
             VideoPlayer.TakeOwnership();
             VideoPlayer.StopVideo();
+            VideoOwnerIsWaitingForPlayback = false;
+            _SynchronizeData();
         }
 
         internal void _RemoveVideosOfPlayerWhoLeft(int leftPlayerID)
         {
+            _LogDebug($"Clearing all videos of leaving player {_GetPlayerInfo(leftPlayerID)}");
             for (int i = Count(queuedVideos) - 1; i >= 0; i--)
             {
                 int videoOwnerPlayerID = GetVideoOwner(i);
@@ -689,9 +694,9 @@ namespace USharpVideoQueue.Runtime
                 if (videoOwnerPlayerID == leftPlayerID || !_IsPlayerWithIDValid(videoOwnerPlayerID))
                 {
                     _LogDebug(
-                        $"Removing video {queuedTitles[i]} with URL {queuedVideos[i]} because owner with Player-ID {leftPlayerID} has left the instance! " +
-                        $"Owner of the queue is currently {Networking.GetOwner(gameObject).playerId}." +
-                        $" Instance master is currently {Networking.Master.playerId}", true);
+                        $"Removing video {queuedTitles[i]} with URL {queuedVideos[i].Get()} because owner {_GetPlayerInfo(leftPlayerID)} has left the instance! ",
+                        true);
+                       
                     _RemoveVideo(i, true);
                 }
             }
@@ -758,16 +763,36 @@ namespace USharpVideoQueue.Runtime
 
         /// <summary>
         /// NetworkCallable. Not intended to be called externally.
-        /// Receives an error log message broadcast and logs it locally as a warning (mirrors original behavior).
+        /// Receives an error log message broadcast and logs it locally.
         /// </summary>
         /// <param name="message">The message to log.</param>
         [NetworkCallable]
-        public void RPC_ReceiveBroadcastError(string message) => _LogWarning(message);
+        public void RPC_ReceiveBroadcastError(string message) => _LogError(message);
 
         internal void _LogRequestDenied(string requestName, int playerId)
         {
             _LogWarning(
                 $"'{requestName}'-Request by user with ID {playerId} has been denied!", true);
+        }
+        
+        internal string _GetPlayerInfo(int playerId)
+        {
+            return _GetPlayerInfo(VRCPlayerApi.GetPlayerById(playerId));
+        }
+
+        internal string _GetPlayerInfo(VRCPlayerApi player)
+        {
+            return Utilities.IsValid(player) ? $"[playerId: {player.playerId}, displayName: {player.displayName}]" : "[Invalid Player]";
+        }
+
+        internal void _LogOwnerAndMaster(bool broadcast = false)
+        {
+            VRCPlayerApi owner = Networking.GetOwner(gameObject);
+            string ownerInfo = _GetPlayerInfo(owner);
+            VRCPlayerApi master = Networking.Master;
+            string masterInfo = _GetPlayerInfo(master);
+            
+            _LogDebug($"\nOwner: {ownerInfo} \nMaster: {masterInfo}", broadcast);
         }
 
         /* VRC SDK wrapper functions to enable mocking for tests */
@@ -926,19 +951,20 @@ namespace USharpVideoQueue.Runtime
         [RecursiveMethod]
         internal virtual void SendCallback(string callbackName, bool broadcast = false)
         {
+            if (string.IsNullOrEmpty(callbackName)) return;
+
             if (broadcast)
             {
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastCallback), callbackName);
                 return;
             }
 
+            if (registeredCallbackReceivers == null || registeredCallbackReceivers.Length == 0) return;
+
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
-                if (!UdonSharpBehaviour.Equals(callbackName, null))
-                {
-                    callbackReceiver.SendCustomEvent(callbackName);
-                    _LogDebug($"Sent Callback '{callbackName}'");
-                }
+                callbackReceiver.SendCustomEvent(callbackName);
+                _LogDebug($"Sent Callback '{callbackName}'");
             }
         }
 
