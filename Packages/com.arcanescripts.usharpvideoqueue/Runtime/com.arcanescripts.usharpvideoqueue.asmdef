@@ -6,7 +6,8 @@
         "VRC.SDKBase",
         "UdonSharp.Runtime",
         "com.arcanescripts.usharpvideo",
-        "VRC.Udon"
+        "VRC.Udon",
+        "VRC.Udon.Serialization.OdinSerializer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
