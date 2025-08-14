@@ -1,5 +1,4 @@
-﻿using System;
-using UdonSharp;
+﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using UdonSharp.Video;
@@ -62,7 +61,7 @@ namespace USharpVideoQueue.Runtime
 
         /// <summary>
         /// Will be true if the player is currently loading a video or 
-        /// the queue is waiting for the timespan defined in [PauseSecondsBetweenVideos]. 
+        /// the queue is waiting for the timespan defined in <see cref="pauseSecondsBetweenVideos"/>. 
         /// While this is true, changes to the first video in queue are disregarded.
         /// </summary>
         public bool VideoOwnerIsWaitingForPlayback
@@ -77,7 +76,8 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Should be run by any script that accesses the queue before it was initialized.
+        /// Initializes internal state and registers this queue with the assigned <see cref="VideoPlayer"/>.
+        /// Call this before using the queue; Safe to call multiple times.
         /// </summary>
         public void EnsureInitialized()
         {
@@ -114,31 +114,68 @@ namespace USharpVideoQueue.Runtime
 
         // Request Sending Methods
 
+        /// <summary>
+        /// Queues a video by URL with a custom title. The request is sent to the object owner over the network.
+        /// Will use the URL as the title of the video as well.
+        /// </summary>
+        /// <param name="url">The video URL to enqueue.</param>
         public void QueueVideo(VRCUrl url) => QueueVideo(url, url.Get());
 
+        /// <summary>
+        /// Queues a video by URL with a custom title. The request is sent to the object owner over the network.
+        /// </summary>
+        /// <param name="url">The video URL to enqueue.</param>
+        /// <param name="title">Display title to associate with the URL.</param>
         public void QueueVideo(VRCUrl url, string title) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnQueueVideoRequested),
                 localPlayerId, url, title);
 
+        /// <summary>
+        /// Clears the entire queue. The request is sent to the owner and will only be applied if the sender has elevated rights.
+        /// </summary>
         public void Clear() =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnClearRequested), localPlayerId);
 
+        /// <summary>
+        /// Moves a queued video up or down within the list. The request is sent to the object owner over the network.
+        /// </summary>
+        /// <param name="index">Zero-based index of the video to move.</param>
+        /// <param name="directionUp">True to move up; false to move down.</param>
         public void MoveVideo(int index, bool directionUp) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnMoveVideoRequested),
                 localPlayerId, index, directionUp);
 
+        /// <summary>
+        /// Removes a video from the queue. The request is sent to the object owner over the network and will execute
+        /// if the sending user has permission to remove the video.
+        /// </summary>
+        /// <param name="index">Zero-based index of the video to remove.</param>
         public void RemoveVideo(int index) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnRemoveVideoRequested),
                 localPlayerId, index);
 
+        /// <summary>
+        /// Sets the per-user queue limit. The request is sent to the owner and will only be applied if the sender has elevated rights.
+        /// </summary>
+        /// <param name="limit">Maximum number of videos each user may queue (non-negative).</param>
         public void SetVideoLimitPerUser(int limit) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserRequested),
                 localPlayerId, limit);
 
+        /// <summary>
+        /// Toggles enforcement of the per-user queue limit. The request is sent to the owner and will only be applied
+        /// if the sender has elevated rights.
+        /// </summary>
+        /// <param name="enabled">True to enforce per-user limits; false to disable enforcement.</param>
         public void SetVideoLimitPerUserEnabled(bool enabled) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserEnabledRequested),
                 localPlayerId, enabled);
 
+        /// <summary>
+        /// Enables or disables custom URL input. The request is sent to the owner and will only be applied if the
+        /// sender has elevated rights.
+        /// </summary>
+        /// <param name="enabled">True to allow custom URL input; false to disallow.</param>
         public void SetCustomUrlInputEnabled(bool enabled) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetCustomUrlInputEnabledRequested),
                 localPlayerId, enabled);
@@ -146,6 +183,14 @@ namespace USharpVideoQueue.Runtime
 
         // Request Executing Methods
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler for incoming queue requests.
+        /// Validates the URL, checks permissions and capacity, enqueues the video, and starts playback if queue was empty.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="url">URL to enqueue.</param>
+        /// <param name="title">Associated display title.</param>
         [NetworkCallable]
         public void OnQueueVideoRequested(int playerID, VRCUrl url, string title)
         {
@@ -177,9 +222,14 @@ namespace USharpVideoQueue.Runtime
 
             bool wasEmpty = IsEmpty(queuedVideos);
             _EnqueueVideoData(url, title, playerID);
-            if (wasEmpty) MakePlayerPlayFirst();
+            if (wasEmpty) _MakePlayerPlayFirst();
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to clear the queue. Only executes if the requester has elevated rights.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
         [NetworkCallable]
         public void OnClearRequested(int playerID)
         {
@@ -200,6 +250,13 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueCleared, true);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to move a video within the queue.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="index">Index of the video to move.</param>
+        /// <param name="directionUp">True to move up; false to move down.</param>
         [NetworkCallable]
         public void OnMoveVideoRequested(int playerID, int index, bool directionUp)
         {
@@ -217,6 +274,12 @@ namespace USharpVideoQueue.Runtime
             else _MoveDownVideoData(index);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to remove a video from the queue.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="index">Index of the video to remove.</param>
         [NetworkCallable]
         public void OnRemoveVideoRequested(int playerID, int index)
         {
@@ -231,6 +294,12 @@ namespace USharpVideoQueue.Runtime
         }
 
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to change the per-user queue limit.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="limit">New non-negative per-user limit.</param>
         [NetworkCallable]
         public void OnSetVideoLimitPerUserRequested(int playerID, int limit)
         {
@@ -248,6 +317,12 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to enable or disable per-user queue limits.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
         public void OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
@@ -264,6 +339,12 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueVideoLimitPerUserChanged, true);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side handler to enable or disable custom URL input.
+        /// </summary>
+        /// <param name="playerID">Network player ID of the requester.</param>
+        /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
         public void OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
@@ -282,7 +363,11 @@ namespace USharpVideoQueue.Runtime
 
         // Player Coordination
 
-        public void MakePlayerPlayFirst()
+        /// <summary>
+        /// Instructs the owner to have the user who queued the first video start playback on their client.
+        /// No-op if the queue is empty.
+        /// </summary>
+        private void _MakePlayerPlayFirst()
         {
             if (QueuedVideosCount() == 0) return;
 
@@ -293,7 +378,11 @@ namespace USharpVideoQueue.Runtime
                 videoOwnerPlayerID, nextURL);
         }
 
-        public void SkipToNextVideo(bool force = false)
+        /// <summary>
+        /// Skips the currently playing video and advances to the next item in the queue.
+        /// </summary>
+        /// <param name="force">If true, removes the first video even when the owner is currently loading.</param>
+        private void _SkipToNextVideo(bool force = false)
         {
             if (VideoOwnerIsWaitingForPlayback && !force)
             {
@@ -311,10 +400,17 @@ namespace USharpVideoQueue.Runtime
             else
             {
                 SendCallback(OnUSharpVideoQueueVideoEnded, true);
-                MakePlayerPlayFirst();
+                _MakePlayerPlayFirst();
             }
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Client-side callback invoked across the network telling the designated user to play a URL.
+        /// Only executes on the client whose <paramref name="playerID"/> matches the local player.
+        /// </summary>
+        /// <param name="playerID">Target player ID.</param>
+        /// <param name="url">URL to play.</param>
         [NetworkCallable]
         public void InvokeUserPlay(int playerID, VRCUrl url)
         {
@@ -325,23 +421,40 @@ namespace USharpVideoQueue.Runtime
             VideoPlayer.PlayVideo(url);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side callback when the video finishes successfully on the video owner's client. Advances the queue.
+        /// </summary>
+        /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
         public void OnVideoOwnerVideoEnd(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoEnd received from Player {playerID}", true);
-            SkipToNextVideo();
+            _SkipToNextVideo();
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side callback when an error occurs while playing the video on the video-owners client.
+        /// Clears the waiting flag and advances the queue.
+        /// </summary>
+        /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
         public void OnVideoOwnerVideoError(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoError received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
-            SkipToNextVideo();
+            _SkipToNextVideo();
             SendCallback(OnUSharpVideoQueueSkippedError, true);
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side callback when the video owner's client begins loading the video.
+        /// Sets the waiting flag and synchronizes state.
+        /// </summary>
+        /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
         public void OnVideoOwnerVideoLoadStart(int playerID)
         {
@@ -351,6 +464,12 @@ namespace USharpVideoQueue.Runtime
             _SynchronizeData();
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Owner-side callback when the video owner's client begins playback.
+        /// Clears the waiting flag and synchronizes state.
+        /// </summary>
+        /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
         public void OnVideoOwnerVideoPlay(int playerID)
         {
@@ -363,14 +482,17 @@ namespace USharpVideoQueue.Runtime
         /// <summary>
         /// Returns the count of currently queued videos.
         /// </summary>
+        /// <returns>Number of valid entries in the queue.</returns>
         public int QueuedVideosCount()
         {
             return Count(queuedVideos);
         }
 
         /// <summary>
-        /// Returns the VRCUrl currently queued at [index]. Returns VRCUrl.Empty if [index] not valid.
+        /// Returns the <see cref="VRCUrl"/> currently queued at <paramref name="index"/>.
         /// </summary>
+        /// <param name="index">Zero-based index into the queue.</param>
+        /// <returns>The URL at the index, or <see cref="VRCUrl.Empty"/> if the index is invalid.</returns>
         public VRCUrl GetURL(int index)
         {
             if (!_IsIndexValid(index)) return VRCUrl.Empty;
@@ -378,8 +500,10 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Returns the title of the video currently queued at [index]. Returns an empty string if [index] is not valid. 
+        /// Returns the title of the video currently queued at <paramref name="index"/>.
         /// </summary>
+        /// <param name="index">Zero-based index into the queue.</param>
+        /// <returns>The title at the index, or an empty string if the index is invalid.</returns>
         public string GetTitle(int index)
         {
             if (!_IsIndexValid(index)) return string.Empty;
@@ -387,8 +511,10 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Returns the player id of the player who queued the video at [index]. Returns -1 if [index] is not valid. 
+        /// Returns the player ID of the user who queued the video at <paramref name="index"/>.
         /// </summary>
+        /// <param name="index">Zero-based index into the queue.</param>
+        /// <returns>The player ID, or -1 if the index is invalid.</returns>
         public int GetVideoOwner(int index)
         {
             if (!_IsIndexValid(index)) return -1;
@@ -396,9 +522,11 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Returns whether the local player is permitted to remove the video at [index].
-        /// This is the case if the user has queued the video themselves or they have elevated rights. 
+        /// Determines whether the player is permitted to remove the video at <paramref name="index"/>.
         /// </summary>
+        /// <param name="playerID">Player ID to check permissions for.</param>
+        /// <param name="index">Index of the video in the queue.</param>
+        /// <returns>True if the player queued the video or has elevated rights; otherwise false.</returns>
         public bool IsPlayerPermittedToRemoveVideo(int playerID, int index)
         {
             if (_PlayerWithIDHasElevatedRights(playerID)) return true;
@@ -406,8 +534,12 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Returns whether the local player is permitted and able to move video with index up or down in the queue.
+        /// Determines whether the player is permitted and able to move a video up or down in the queue.
         /// </summary>
+        /// <param name="playerID">Player ID to check permissions for.</param>
+        /// <param name="index">Index of the video to move.</param>
+        /// <param name="directionUp">True to move up; false to move down.</param>
+        /// <returns>True if the move is allowed; otherwise false.</returns>
         public bool IsPlayerAbleToMoveVideo(int playerID, int index, bool directionUp)
         {
             if (!_PlayerWithIDHasElevatedRights(playerID)) return false;
@@ -425,9 +557,11 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
-        /// Returns whether the local player is permitted queue another video.
-        /// This is the case if the [VideoLimitPerUser] was not reached yet or if they have elevated rights.
+        /// Determines whether the player is permitted to queue another video.
+        /// This is true if the per-user limit is disabled, not yet reached, or the player has elevated rights.
         /// </summary>
+        /// <param name="playerID">Player ID to check permissions for.</param>
+        /// <returns>True if the player may queue another video; otherwise false.</returns>
         public bool IsPlayerPermittedToQueueVideo(int playerID)
         {
             if (_PlayerWithIDHasElevatedRights(playerID) || !videoLimitPerUserEnabled) return true;
@@ -436,17 +570,21 @@ namespace USharpVideoQueue.Runtime
 
 
         /// <summary>
-        /// Returns whether the local player is permitted to add custom video links to the queue.
-        /// This check is not affected by the [VideoLimitPerUser]
+        /// Determines whether the player is permitted to add custom video links to the queue.
+        /// Not affected by the per-user video limit.
         /// </summary>
+        /// <param name="playerID">Player ID to check permissions for.</param>
+        /// <returns>True if the player has elevated rights or custom URL input is enabled; otherwise false.</returns>
         public bool IsPlayerPermittedToQueueCustomVideos(int playerID)
         {
             return _PlayerWithIDHasElevatedRights(playerID) || customUrlInputEnabled;
         }
 
         /// <summary>
-        /// Returns the count of all videos currently queued by the player with the id [playerID].
+        /// Counts all videos currently queued by the specified player.
         /// </summary>
+        /// <param name="playerID">Player whose queued items should be counted.</param>
+        /// <returns>Number of videos queued by the player.</returns>
         public int QueuedVideosCountByUser(int playerID)
         {
             int videoCount = 0;
@@ -458,15 +596,25 @@ namespace USharpVideoQueue.Runtime
             return videoCount;
         }
 
+        /// <summary>
+        /// Gets the configured per-user queue limit.
+        /// </summary>
+        /// <returns>The maximum number of videos a single user may queue.</returns>
         public int GetVideoLimitPerUser() => videoLimitPerUser;
 
 
+        /// <summary>
+        /// Called when synchronized data is received from the network. Triggers local queue content change handling.
+        /// </summary>
         public override void OnDeserialization()
         {
             _LogDebug("OnDeserialization run!");
             OnQueueContentChange();
         }
 
+        /// <summary>
+        /// Called before this behaviour serializes. Useful for debugging synchronization events.
+        /// </summary>
         public override void OnPreSerialization()
         {
             _LogDebug("Sending Serialized Data!");
@@ -491,7 +639,7 @@ namespace USharpVideoQueue.Runtime
         {
             if (index == 0)
             {
-                SkipToNextVideo(force);
+                _SkipToNextVideo(force);
                 SendCallback(OnUSharpVideoQueueCurrentVideoRemoved, true);
             }
             else
@@ -552,6 +700,8 @@ namespace USharpVideoQueue.Runtime
         /// <summary>
         /// Override this function to integrate with other permission systems!
         /// </summary>
+        /// <param name="id">Player ID to test for elevated rights.</param>
+        /// <returns>True if the player has elevated rights; otherwise false.</returns>
         protected virtual bool _PlayerWithIDHasElevatedRights(int id)
         {
             if (!_IsPlayerWithIDValid(id)) return false;
@@ -574,6 +724,12 @@ namespace USharpVideoQueue.Runtime
                 Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Receives a debug log message broadcast and logs it locally if debug logging is enabled.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        [NetworkCallable]
         public void ReceiveBroadcastDebug(string message) => _LogDebug(message);
 
         internal void _LogWarning(string message, bool broadcast = false)
@@ -584,6 +740,12 @@ namespace USharpVideoQueue.Runtime
                 Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Receives a warning log message broadcast and logs it locally.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        [NetworkCallable]
         public void ReceiveBroadcastWarning(string message) => _LogWarning(message);
 
         internal void _LogError(string message, bool broadcast = false)
@@ -594,6 +756,12 @@ namespace USharpVideoQueue.Runtime
                 Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
 
+        /// <summary>
+        /// NetworkCallable. Not intended to be called externally.
+        /// Receives an error log message broadcast and logs it locally as a warning (mirrors original behavior).
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        [NetworkCallable]
         public void ReceiveBroadcastError(string message) => _LogWarning(message);
 
         internal void _LogRequestDenied(string requestName, int playerId)
@@ -617,6 +785,10 @@ namespace USharpVideoQueue.Runtime
 
         /* VRC Runtime Events */
 
+        /// <summary>
+        /// Called when a player leaves the instance. If this behaviour is owned locally, removes any videos they owned from the queue.
+        /// </summary>
+        /// <param name="player">The player who left.</param>
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
             if (!_IsOwner()) return;
@@ -632,6 +804,10 @@ namespace USharpVideoQueue.Runtime
 
         /* USharpVideoPlayer Event Callbacks */
 
+        /// <summary>
+        /// Receives the <c>OnUSharpVideoEnd</c> event from the linked <see cref="USharpVideoPlayer"/>.
+        /// If this client owns the video player, notifies the owner to advance the queue.
+        /// </summary>
         public virtual void OnUSharpVideoEnd()
         {
             _LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {_IsVideoPlayerOwner()}");
@@ -639,6 +815,9 @@ namespace USharpVideoQueue.Runtime
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoEnd), localPlayerId);
         }
 
+        /// <summary>
+        /// Receives the <c>OnUSharpVideoError</c> event from the linked <see cref="USharpVideoPlayer"/> and notifies the owner.
+        /// </summary>
         public void OnUSharpVideoError()
         {
             _LogDebug($"Received USharpVideoError! Is player Video Player owner? {_IsVideoPlayerOwner()}");
@@ -647,6 +826,9 @@ namespace USharpVideoQueue.Runtime
                     localPlayerId);
         }
 
+        /// <summary>
+        /// Receives the <c>OnUSharpVideoLoadStart</c> event from the linked <see cref="USharpVideoPlayer"/> and notifies the owner.
+        /// </summary>
         public void OnUSharpVideoLoadStart()
         {
             _LogDebug($"Received USharpVideoLoadStart! Is player Video Player owner? {_IsVideoPlayerOwner()}");
@@ -655,6 +837,10 @@ namespace USharpVideoQueue.Runtime
                     localPlayerId);
         }
 
+        /// <summary>
+        /// Receives the <c>OnUSharpVideoPlay</c> event from the linked <see cref="USharpVideoPlayer"/> and notifies the owner.
+        /// Also broadcasts the <see cref="OnUSharpVideoQueuePlayingNextVideo"/> callback locally.
+        /// </summary>
         public void OnUSharpVideoPlay()
         {
             _LogDebug($"Received USharpVideoPlay! Is player Video Player owner? {_IsVideoPlayerOwner()}");
@@ -668,10 +854,10 @@ namespace USharpVideoQueue.Runtime
         //Taken from MerlinVR's USharpVideoPlayer (https://github.com/MerlinVR/USharpVideo)
 
         /// <summary>
-        /// Registers an UdonSharpBehaviour as a callback receiver for events that happen on this video player.
-        /// Callback receivers can be used to react to state changes on the video player without needing to check periodically.
+        /// Registers an <see cref="UdonSharpBehaviour"/> as a callback receiver for events that happen on this video player.
+        /// Callback receivers can be used to react to state changes without polling.
         /// </summary>
-        /// <param name="callbackReceiver"></param>
+        /// <param name="callbackReceiver">The behaviour to receive callbacks.</param>
         public void RegisterCallbackReceiver(UdonSharpBehaviour callbackReceiver)
         {
             //Nullcheck with Equals for testability reasons
@@ -698,6 +884,10 @@ namespace USharpVideoQueue.Runtime
             registeredCallbackReceivers[registeredCallbackReceivers.Length - 1] = callbackReceiver;
         }
 
+        /// <summary>
+        /// Unregisters a previously registered callback receiver.
+        /// </summary>
+        /// <param name="callbackReceiver">The behaviour to remove from the callback list.</param>
         public void UnregisterCallbackReceiver(UdonSharpBehaviour callbackReceiver)
         {
             if (!callbackReceiver)
@@ -728,6 +918,11 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
+        /// <summary>
+        /// Sends a named callback to all registered receivers locally, or broadcasts a request to do so on all clients.
+        /// </summary>
+        /// <param name="callbackName">The name of the method to invoke on receivers.</param>
+        /// <param name="broadcast">True to broadcast across the network; false to invoke locally.</param>
         [RecursiveMethod]
         internal virtual void SendCallback(string callbackName, bool broadcast = false)
         {
@@ -747,6 +942,10 @@ namespace USharpVideoQueue.Runtime
             }
         }
 
+        /// <summary>
+        /// Receives a broadcast callback name and forwards it to all locally registered receivers.
+        /// </summary>
+        /// <param name="callbackName">The name of the callback to invoke.</param>
         public void ReceiveBroadcastCallback(string callbackName) => SendCallback(callbackName);
     }
 }
