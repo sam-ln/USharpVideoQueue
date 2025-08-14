@@ -118,30 +118,30 @@ namespace USharpVideoQueue.Runtime
 
         public void QueueVideo(VRCUrl url, string title) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnQueueVideoRequested),
-                Networking.LocalPlayer.playerId, url, title);
+                localPlayerId, url, title);
 
         public void Clear() =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnClearRequested), Networking.LocalPlayer.playerId);
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnClearRequested), localPlayerId);
 
         public void MoveVideo(int index, bool directionUp) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnMoveVideoRequested),
-                Networking.LocalPlayer.playerId, index, directionUp);
+                localPlayerId, index, directionUp);
 
         public void RemoveVideo(int index) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnRemoveVideoRequested),
-                Networking.LocalPlayer.playerId, index);
+                localPlayerId, index);
 
         public void SetVideoLimitPerUser(int limit) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserRequested),
-                Networking.LocalPlayer.playerId, limit);
+                localPlayerId, limit);
 
         public void SetVideoLimitPerUserEnabled(bool enabled) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserEnabledRequested),
-                Networking.LocalPlayer.playerId, enabled);
+                localPlayerId, enabled);
 
         public void SetCustomUrlInputEnabled(bool enabled) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetCustomUrlInputEnabledRequested),
-                Networking.LocalPlayer.playerId, enabled);
+                localPlayerId, enabled);
 
 
         // Request Executing Methods
@@ -158,7 +158,7 @@ namespace USharpVideoQueue.Runtime
             }
 
             bool wasEmpty = IsEmpty(queuedVideos);
-            enqueueVideoData(url, title);
+            enqueueVideoData(url, title, playerID);
             if (wasEmpty) MakePlayerPlayFirst();
         }
 
@@ -227,17 +227,15 @@ namespace USharpVideoQueue.Runtime
 
         // Player Coordination
 
-
-        
-
         public void MakePlayerPlayFirst()
         {
             if (QueuedVideosCount() == 0) return;
 
             VRCUrl nextURL = (VRCUrl)First(queuedVideos);
+            int videoOwnerPlayerID = (int)First(queuedByPlayer);
 
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(InvokeUserPlay),
-                Networking.LocalPlayer.playerId, nextURL);
+                videoOwnerPlayerID, nextURL);
         }
         
         public void SkipToNextVideo(bool force = false)
@@ -411,11 +409,11 @@ namespace USharpVideoQueue.Runtime
             logDebug("Sending Serialized Data!");
         }
 
-        internal void enqueueVideoData(VRCUrl url, string title)
+        internal void enqueueVideoData(VRCUrl url, string title, int playerId)
         {
             Enqueue(queuedVideos, url);
             Enqueue(queuedTitles, title);
-            Enqueue(queuedByPlayer, localPlayerId);
+            Enqueue(queuedByPlayer, playerId);
             synchronizeData();
         }
 
