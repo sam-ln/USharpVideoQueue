@@ -127,14 +127,14 @@ namespace USharpVideoQueue.Runtime
         /// <param name="url">The video URL to enqueue.</param>
         /// <param name="title">Display title to associate with the URL.</param>
         public void QueueVideo(VRCUrl url, string title) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnQueueVideoRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnQueueVideoRequested),
                 localPlayerId, url, title);
 
         /// <summary>
         /// Clears the entire queue. The request is sent to the owner and will only be applied if the sender has elevated rights.
         /// </summary>
         public void Clear() =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnClearRequested), localPlayerId);
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnClearRequested), localPlayerId);
 
         /// <summary>
         /// Moves a queued video up or down within the list. The request is sent to the object owner over the network.
@@ -142,7 +142,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="index">Zero-based index of the video to move.</param>
         /// <param name="directionUp">True to move up; false to move down.</param>
         public void MoveVideo(int index, bool directionUp) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnMoveVideoRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnMoveVideoRequested),
                 localPlayerId, index, directionUp);
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="index">Zero-based index of the video to remove.</param>
         public void RemoveVideo(int index) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnRemoveVideoRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnRemoveVideoRequested),
                 localPlayerId, index);
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="limit">Maximum number of videos each user may queue (non-negative).</param>
         public void SetVideoLimitPerUser(int limit) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnSetVideoLimitPerUserRequested),
                 localPlayerId, limit);
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="enabled">True to enforce per-user limits; false to disable enforcement.</param>
         public void SetVideoLimitPerUserEnabled(bool enabled) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetVideoLimitPerUserEnabledRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnSetVideoLimitPerUserEnabledRequested),
                 localPlayerId, enabled);
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="enabled">True to allow custom URL input; false to disallow.</param>
         public void SetCustomUrlInputEnabled(bool enabled) =>
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnSetCustomUrlInputEnabledRequested),
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnSetCustomUrlInputEnabledRequested),
                 localPlayerId, enabled);
 
 
@@ -192,7 +192,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="url">URL to enqueue.</param>
         /// <param name="title">Associated display title.</param>
         [NetworkCallable]
-        public void OnQueueVideoRequested(int playerID, VRCUrl url, string title)
+        public void RPC_OnQueueVideoRequested(int playerID, VRCUrl url, string title)
         {
             _LogDebug($"OnQueueVideoRequested from Player {playerID}: {title} ({url})", true);
 
@@ -231,7 +231,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Network player ID of the requester.</param>
         [NetworkCallable]
-        public void OnClearRequested(int playerID)
+        public void RPC_OnClearRequested(int playerID)
         {
             _LogDebug($"OnClearRequested from Player {playerID}", true);
 
@@ -258,7 +258,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="index">Index of the video to move.</param>
         /// <param name="directionUp">True to move up; false to move down.</param>
         [NetworkCallable]
-        public void OnMoveVideoRequested(int playerID, int index, bool directionUp)
+        public void RPC_OnMoveVideoRequested(int playerID, int index, bool directionUp)
         {
             _LogDebug(
                 $"OnMoveVideoRequested from Player {playerID}: Index {index}, Move {(directionUp ? "Up" : "Down")}",
@@ -281,7 +281,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="playerID">Network player ID of the requester.</param>
         /// <param name="index">Index of the video to remove.</param>
         [NetworkCallable]
-        public void OnRemoveVideoRequested(int playerID, int index)
+        public void RPC_OnRemoveVideoRequested(int playerID, int index)
         {
             _LogDebug($"OnRemoveVideoRequested from Player {playerID}: Index {index}", true);
             if (!IsPlayerPermittedToRemoveVideo(playerID, index))
@@ -301,7 +301,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="playerID">Network player ID of the requester.</param>
         /// <param name="limit">New non-negative per-user limit.</param>
         [NetworkCallable]
-        public void OnSetVideoLimitPerUserRequested(int playerID, int limit)
+        public void RPC_OnSetVideoLimitPerUserRequested(int playerID, int limit)
         {
             _LogDebug($"OnSetVideoLimitPerUserRequested from Player {playerID}: Limit = {limit}", true);
 
@@ -324,7 +324,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="playerID">Network player ID of the requester.</param>
         /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
-        public void OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
+        public void RPC_OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
             _LogDebug($"OnSetVideoLimitPerUserEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
 
@@ -346,7 +346,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="playerID">Network player ID of the requester.</param>
         /// <param name="enabled">True to enable; false to disable.</param>
         [NetworkCallable]
-        public void OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
+        public void RPC_OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
             _LogDebug($"OnSetCustomUrlInputEnabledRequested from Player {playerID}: Enabled = {enabled}", true);
 
@@ -374,7 +374,7 @@ namespace USharpVideoQueue.Runtime
             VRCUrl nextURL = (VRCUrl)First(queuedVideos);
             int videoOwnerPlayerID = (int)First(queuedByPlayer);
 
-            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(InvokeUserPlay),
+            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_InvokeUserPlay),
                 videoOwnerPlayerID, nextURL);
         }
 
@@ -412,7 +412,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="playerID">Target player ID.</param>
         /// <param name="url">URL to play.</param>
         [NetworkCallable]
-        public void InvokeUserPlay(int playerID, VRCUrl url)
+        public void RPC_InvokeUserPlay(int playerID, VRCUrl url)
         {
             _LogDebug($"OnUserPlayURLInvoked sent to Player {playerID}: {url.Get()}", true);
 
@@ -427,7 +427,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
-        public void OnVideoOwnerVideoEnd(int playerID)
+        public void RPC_OnVideoOwnerVideoEnd(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoEnd received from Player {playerID}", true);
             _SkipToNextVideo();
@@ -440,7 +440,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
-        public void OnVideoOwnerVideoError(int playerID)
+        public void RPC_OnVideoOwnerVideoError(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoError received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = false;
@@ -456,7 +456,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
-        public void OnVideoOwnerVideoLoadStart(int playerID)
+        public void RPC_OnVideoOwnerVideoLoadStart(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoLoadStart received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = true;
@@ -471,7 +471,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
         [NetworkCallable]
-        public void OnVideoOwnerVideoPlay(int playerID)
+        public void RPC_OnVideoOwnerVideoPlay(int playerID)
         {
             _LogDebug($"OnVideoOwnerVideoPlay received from Player {playerID}", true);
             VideoOwnerIsWaitingForPlayback = false;
@@ -719,7 +719,7 @@ namespace USharpVideoQueue.Runtime
         {
             if (!enableDebug) return;
             if (broadcast)
-                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastDebug), message);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastDebug), message);
             else
                 Debug.Log($"[DEBUG]USharpVideoQueue: {message}");
         }
@@ -730,12 +730,12 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="message">The message to log.</param>
         [NetworkCallable]
-        public void ReceiveBroadcastDebug(string message) => _LogDebug(message);
+        public void RPC_ReceiveBroadcastDebug(string message) => _LogDebug(message);
 
         internal void _LogWarning(string message, bool broadcast = false)
         {
             if (broadcast)
-                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastWarning), message);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastWarning), message);
             else
                 Debug.LogWarning($"[WARNING]USharpVideoQueue: {message}");
         }
@@ -746,12 +746,12 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="message">The message to log.</param>
         [NetworkCallable]
-        public void ReceiveBroadcastWarning(string message) => _LogWarning(message);
+        public void RPC_ReceiveBroadcastWarning(string message) => _LogWarning(message);
 
         internal void _LogError(string message, bool broadcast = false)
         {
             if (broadcast)
-                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastError), message);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_ReceiveBroadcastError), message);
             else
                 Debug.LogError($"[ERROR]USharpVideoQueue: {message}");
         }
@@ -762,7 +762,7 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="message">The message to log.</param>
         [NetworkCallable]
-        public void ReceiveBroadcastError(string message) => _LogWarning(message);
+        public void RPC_ReceiveBroadcastError(string message) => _LogWarning(message);
 
         internal void _LogRequestDenied(string requestName, int playerId)
         {
@@ -812,7 +812,7 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoEnd), localPlayerId);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoEnd), localPlayerId);
         }
 
         /// <summary>
@@ -822,7 +822,7 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoError! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoError),
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoError),
                     localPlayerId);
         }
 
@@ -833,7 +833,7 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoLoadStart! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoLoadStart),
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoLoadStart),
                     localPlayerId);
         }
 
@@ -845,7 +845,7 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoPlay! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(OnVideoOwnerVideoPlay),
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoPlay),
                     localPlayerId);
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
         }
