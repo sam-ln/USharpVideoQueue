@@ -85,6 +85,23 @@ public class RPCTimer : UdonSharpBehaviour
 
     // -------------------- API --------------------
 
+    
+    /// <summary>
+    /// Cancels the running timer and reschedules a one-shot networked call after delaySeconds.
+    /// The target method MUST be [NetworkCallable] and accept the provided args.
+    /// Returns a positive timerId, or -1 if capacity is full / bad input.
+    /// </summary>
+    public int CancelRunningAndSchedule(
+        UdonSharpBehaviour target,
+        int existingTimerId,
+        string networkMethodName,
+        float delaySeconds,
+        params object[] args)
+    {
+        if (existingTimerId != -1) Cancel(existingTimerId);
+        return Schedule(target, networkMethodName, delaySeconds, args);
+    }
+
     /// <summary>
     /// Schedule a one-shot networked call after delaySeconds.
     /// The target method MUST be [NetworkCallable] and accept the provided args.

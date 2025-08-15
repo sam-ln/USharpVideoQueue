@@ -2949,7 +2949,7 @@ PrefabInstance:
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: NetworkIDs.Array.size
-      value: 31
+      value: 32
       objectReference: {fileID: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
@@ -3110,6 +3110,11 @@ PrefabInstance:
         type: 3}
       propertyPath: NetworkIDs.Array.data[30].ID
       value: 55
+      objectReference: {fileID: 0}
+    - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
+        type: 3}
+      propertyPath: NetworkIDs.Array.data[31].ID
+      value: 56
       objectReference: {fileID: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
@@ -3688,6 +3693,11 @@ PrefabInstance:
       objectReference: {fileID: 1734926418}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
+      propertyPath: NetworkIDs.Array.data[31].gameObject
+      value: 
+      objectReference: {fileID: 1498020995}
+    - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
+        type: 3}
       propertyPath: NetworkIDs.Array.data[17].SerializedTypeNames.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -3758,6 +3768,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
+      propertyPath: NetworkIDs.Array.data[31].SerializedTypeNames.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
+        type: 3}
       propertyPath: NetworkIDs.Array.data[17].SerializedTypeNames.Array.data[0]
       value: VRC.Udon.UdonBehaviour
       objectReference: {fileID: 0}
@@ -3824,6 +3839,11 @@ PrefabInstance:
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: NetworkIDs.Array.data[30].SerializedTypeNames.Array.data[0]
+      value: VRC.Udon.UdonBehaviour
+      objectReference: {fileID: 0}
+    - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
+        type: 3}
+      propertyPath: NetworkIDs.Array.data[31].SerializedTypeNames.Array.data[0]
       value: VRC.Udon.UdonBehaviour
       objectReference: {fileID: 0}
     - target: {fileID: 8464459589408506562, guid: 8894fa7e4588a5c4fab98453e558847d,
@@ -7535,6 +7555,12 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3067704759133045974, guid: c7f0154e9af2ff24ca0cc64da9609f94,
     type: 3}
   m_PrefabInstance: {fileID: 939889040}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1498020995 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3309354459364603235, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+    type: 3}
+  m_PrefabInstance: {fileID: 7270593463385661533}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1515415977
 GameObject:
@@ -13496,6 +13522,12 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 631352788319460178, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
+      propertyPath: serializationData.Prefab
+      value: 
+      objectReference: {fileID: 631352788319460178, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
     - target: {fileID: 1901671278012406487, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
         type: 3}
       propertyPath: m_Material
@@ -13776,6 +13808,12 @@ PrefabInstance:
       propertyPath: m_Material
       value: 
       objectReference: {fileID: 2100000, guid: 35630e38b4e5ffb40b44ec5348b4333f, type: 2}
+    - target: {fileID: 6924508267401629516, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
+      propertyPath: serializationData.Prefab
+      value: 
+      objectReference: {fileID: 6924508267401629516, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
     - target: {fileID: 7154434075474578388, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
         type: 3}
       propertyPath: m_Material
@@ -13860,6 +13898,11 @@ PrefabInstance:
         type: 3}
       propertyPath: enableDebug
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7270593463141513187, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
+        type: 3}
+      propertyPath: videoLoadTimeoutSeconds
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 7270593463141513187, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2,
         type: 3}
@@ -14133,7 +14176,8 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: 35630e38b4e5ffb40b44ec5348b4333f, type: 2}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8309164259429298419, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d36cb9d38c9e1b4484e59a7a7f7fde2, type: 3}
