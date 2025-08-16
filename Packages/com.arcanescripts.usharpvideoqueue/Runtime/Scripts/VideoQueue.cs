@@ -29,12 +29,8 @@ namespace USharpVideoQueue.Runtime
         internal int videoLimitPerUser = 3;
 
         [FormerlySerializedAs("pauseSecondsBetweenVideos")] [Tooltip("Time to wait between videos")] [SerializeField]
-        internal int pauseSecondsBeforePlayback = 5;
+        internal int waitSecondsBeforePlayback = 5;
 
-        [FormerlySerializedAs("videoLoadTimeout")]
-        [Tooltip("Time to wait for user to load video before skipping")]
-        [SerializeField]
-        internal int videoLoadTimeoutSeconds = 25;
 
         [Tooltip("Should Debug messages be written to the log?")] [SerializeField]
         internal bool enableDebug = false;
@@ -65,14 +61,13 @@ namespace USharpVideoQueue.Runtime
         [UdonSynced] internal bool waitingForPauseBetweenVideos = false;
 
         internal int pauseTimerId = -1;
-        internal int timeoutTimerId = -1;
         internal bool initialized = false;
         internal int localPlayerId;
 
 
         /// <summary>
         /// Will be true if the player is currently loading a video or 
-        /// the queue is waiting for the timespan defined in <see cref="pauseSecondsBeforePlayback"/>. 
+        /// the queue is waiting for the timespan defined in <see cref="waitSecondsBeforePlayback"/>. 
         /// While this is true, changes to the first video in queue are disregarded.
         /// </summary>
         public bool VideoOwnerIsWaitingForPlayback
@@ -100,7 +95,7 @@ namespace USharpVideoQueue.Runtime
                     "Critical! VideoQueue is missing USharpVideo Player reference! Please check in the inspector!");
                 return;
             }
-            
+
             if (Equals(Timer, null))
             {
                 _LogError(
@@ -256,7 +251,10 @@ namespace USharpVideoQueue.Runtime
             QueueArray.Clear(queuedByPlayer);
             _SynchronizeData();
             _ClearVideoPlayer();
-            _CancelTimeout();
+
+            VideoOwnerIsWaitingForPlayback = false;
+            _SynchronizeData();
+
             _CancelScheduledPlayback();
 
             SendCallback(OnUSharpVideoQueueCleared, true);
@@ -345,17 +343,17 @@ namespace USharpVideoQueue.Runtime
 
         internal void _SchedulePlayback()
         {
-            if (pauseSecondsBeforePlayback == 0)
+            if (waitSecondsBeforePlayback == 0)
             {
                 RPC_MakePlayerPlayFirst();
                 return;
             }
 
             pauseTimerId = Timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
-                pauseSecondsBeforePlayback);
+                waitSecondsBeforePlayback);
             waitingForPauseBetweenVideos = true;
             _SynchronizeData();
-            Debug.Log($"Scheduled playback in {pauseSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.");
+            Debug.Log($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.");
         }
 
         internal void _CancelScheduledPlayback()
@@ -375,8 +373,8 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_MakePlayerPlayFirst()
         {
-            if (!_IsOwner()) return; 
-            
+            if (!_IsOwner()) return;
+
             waitingForPauseBetweenVideos = false;
             pauseTimerId = -1;
 
@@ -385,7 +383,8 @@ namespace USharpVideoQueue.Runtime
             VRCUrl nextURL = (VRCUrl)First(queuedVideos);
             int videoOwnerPlayerID = (int)First(queuedByPlayer);
 
-            _ArmTimeout();
+            VideoOwnerIsWaitingForPlayback = true;
+            _SynchronizeData();
 
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_InvokeUserPlay),
                 videoOwnerPlayerID, nextURL);
@@ -450,7 +449,8 @@ namespace USharpVideoQueue.Runtime
         {
             _LogRequest(nameof(RPC_OnVideoOwnerVideoError), playerID);
 
-            _CancelTimeout();
+            VideoOwnerIsWaitingForPlayback = false;
+            _SynchronizeData();
 
             _SkipToNextVideo();
             SendCallback(OnUSharpVideoQueueSkippedError, true);
@@ -478,19 +478,10 @@ namespace USharpVideoQueue.Runtime
         public void RPC_OnVideoOwnerVideoPlay(int playerID)
         {
             _LogRequest(nameof(RPC_OnVideoOwnerVideoPlay), playerID);
-            _CancelTimeout();
-        }
 
-        [NetworkCallable]
-        public void RPC_OnVideoOwnerTimeout()
-        {
-            _LogWarning("Player loading video has run into timeout. Skipping to next video.");
-            timeoutTimerId = -1;
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
-            _SkipToNextVideo();
         }
-
 
         /// <summary>
         /// Returns the count of currently queued videos.
@@ -662,7 +653,9 @@ namespace USharpVideoQueue.Runtime
                 //Only allow to remove video if it is not currently loading or if it is forced.
                 if (VideoOwnerIsWaitingForPlayback && !force) return;
 
-                if (VideoOwnerIsWaitingForPlayback) _CancelTimeout();
+                VideoOwnerIsWaitingForPlayback = false;
+                _SynchronizeData();
+
                 if (waitingForPauseBetweenVideos) _CancelScheduledPlayback();
 
                 _SkipToNextVideo();
@@ -723,26 +716,6 @@ namespace USharpVideoQueue.Runtime
                     _RemoveVideo(i, true);
                 }
             }
-        }
-
-        internal void _ArmTimeout()
-        {
-            VideoOwnerIsWaitingForPlayback = true;
-            _SynchronizeData();
-
-            if (videoLoadTimeoutSeconds == 0) return;
-            timeoutTimerId = Timer.CancelRunningAndSchedule(this, timeoutTimerId, nameof(RPC_OnVideoOwnerTimeout),
-                videoLoadTimeoutSeconds);
-            _LogDebug($"Timeout has been armed for {videoLoadTimeoutSeconds} seconds with timer id {timeoutTimerId}");
-        }
-
-        internal void _CancelTimeout()
-        {
-            if (timeoutTimerId != -1) Timer.Cancel(timeoutTimerId);
-            _LogDebug($"Timeout has been cancelled for with timer id {timeoutTimerId}");
-            timeoutTimerId = -1;
-            VideoOwnerIsWaitingForPlayback = false;
-            _SynchronizeData();
         }
 
         /// <summary>
@@ -883,7 +856,6 @@ namespace USharpVideoQueue.Runtime
             if (_IsOwner())
             {
                 _LogDebug("You've become the new owner! Rearming running RPC timers!");
-                if (VideoOwnerIsWaitingForPlayback) _ArmTimeout();
                 if (waitingForPauseBetweenVideos) _SchedulePlayback();
             }
 
