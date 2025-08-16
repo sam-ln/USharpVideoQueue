@@ -644,14 +644,16 @@ namespace USharpVideoQueue.Runtime
             _SynchronizeData();
         }
 
-        internal void _RemoveVideo(int index, bool force = false)
+        internal void _RemoveVideo(int index)
         {
             // Special treatment if currently playing video is removed
             bool videoIsPlaying = index == 0;
             if (videoIsPlaying)
             {
                 //Only allow to remove video if it is not currently loading or if it is forced.
-                if (VideoOwnerIsWaitingForPlayback && !force) return;
+                if (VideoOwnerIsWaitingForPlayback)
+                    _LogWarning(
+                        $"A video has been removed that was currently being loaded by a player. This can lead to unexpected behaviour.");
 
                 VideoOwnerIsWaitingForPlayback = false;
                 _SynchronizeData();
@@ -713,7 +715,7 @@ namespace USharpVideoQueue.Runtime
                         $"Removing video {queuedTitles[i]} with URL {queuedVideos[i].Get()} because owner {_GetPlayerInfo(leftPlayerID)} has left the instance! ",
                         true);
 
-                    _RemoveVideo(i, true);
+                    _RemoveVideo(i);
                 }
             }
         }
