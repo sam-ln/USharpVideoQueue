@@ -40,7 +40,7 @@ namespace USharpVideoQueue.Runtime
         public RPCTimer Timer;
 
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
-        public const string OnUSharpVideoQueueQueueAdvanced = "OnUSharpVideoQueueQueueAdvanced";
+        public const string OnUSharpVideoQueueQueueHasAdvanced = "OnUSharpVideoQueueHasAdvanced";
         public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
         public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
         public const string OnUSharpVideoQueueVideoEnded = "OnUSharpVideoQueueVideoEnded";
@@ -884,7 +884,7 @@ namespace USharpVideoQueue.Runtime
             
             // Throwing callback here, so that non-owner clients have the synced data when it is thrown.
             if (videosAnnounced == VideosPlayed) return;
-            SendCallback(OnUSharpVideoQueueQueueAdvanced);
+            SendCallback(OnUSharpVideoQueueQueueHasAdvanced);
             videosAnnounced = VideosPlayed;
         }
 

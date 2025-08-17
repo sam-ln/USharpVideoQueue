@@ -55,7 +55,7 @@ namespace USharpVideoQueue.Runtime.Controls
             UpdateURLInputFieldEnabled(Queue.IsPlayerPermittedToQueueCustomVideos(localPlayerId));
         }
 
-        public void OnUSharpVideoQueueQueueAdvanced()
+        public void OnUSharpVideoQueueHasAdvanced()
         {
             WarningModal.Close();
         }
