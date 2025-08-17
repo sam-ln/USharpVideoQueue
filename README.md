@@ -24,24 +24,30 @@ stability and easy integration into VRChat worlds.
 ### Method 1: VRChat Creator Companion (recommended)
 
 It's recommended to use the [VRChat Creator Companion (VCC)](https://vcc.docs.vrchat.com/) to install this package.
-To do so, visit my VPM Repository below and click "***Add to VCC***" and add the `com.arcanescripts.usharpvideoqueue`package to your project.
+To do so, visit my VPM Repository below and click "***Add to VCC***" and add the `com.arcanescripts.usharpvideoqueue`
+package to your project.
 
-If you choose this method, you need to use the USharpVideo version provided in my repository. It will be automatically installed as a dependency.
+If you choose this method, you need to use the USharpVideo version provided in my repository. It will be automatically
+installed as a dependency.
 
-####  [📥 My VRChat Creator Companion Repository](https://sam-ln.github.io/vpm/)
+#### [📥 My VRChat Creator Companion Repository](https://sam-ln.github.io/vpm/)
 
 ### Method 2: Install manually using the .unitypackage file
-This method will not use the VCC and should be used if you already have a non-VCC version of USharpVideo installed in your project
+
+This method will not use the VCC and should be used if you already have a non-VCC version of USharpVideo installed in
+your project
 and you do not want to replace it. This version does not include Assembly Definitions (.asmdef files).
+
 #### Requirements
 
 - Latest version of VRChat SDK and UdonSharp (installed via [Creator Companion](https://vcc.docs.vrchat.com/))
 - One version of USharpVideo must be installed. USharpVideoQueue supports these versions:
     - [USharpVideo, a fork by sam-ln (recommended)](https://github.com/sam-ln/USharpVideo)
-    - [USharpVideoModernUI, a fork by DrBlackRat](https://github.com/DrBlackRat/USharpVideoModernUI) 
+    - [USharpVideoModernUI, a fork by DrBlackRat](https://github.com/DrBlackRat/USharpVideoModernUI)
     - [USharpVideo by MerlinVR](https://github.com/MerlinVR/USharpVideo/)
 
 ## Setup in your project
+
 - Depending on your install method, locate USharpVideoQueue in *Packages* or *Assets*
 - Drag USharpVideoQueue prefab into your Unity scene
 - Open up the Queue in your Inspector window and drag your USharpVideoPlayer into the field "Video Player"
@@ -80,9 +86,10 @@ public class YourBehaviour : UdonSharpBehaviour
 
 | **Event**                                  | **Trigger**                                                                                                                     | **Example Usecase**                                                                   |
 |--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| OnUSharpVideoQueueContentChange            | After a video is added or (automatically) removed from the Queue.                                                               | Update any displays that use queue data                                               |
+| OnUSharpVideoQueueContentChange            | After a video is added or (automatically) removed from the Queue or any setting has changed.                                    | Update any displays that use queue data                                               |
 | OnUSharpVideoQueuePlayingNextVideo         | When a video has finished loading and actually starts playing.                                                                  | Hide any placeholders, errors or notifications on the screen                          |
-| OnUSharpVideoQueueVideoEnded               | After a video has finished playing and was removed from the queue. Does not trigger after the final video has finished playing. | Show notification for the owner of the next video that their video will start playing |
+| OnUSharpVideoQueueHasAdvanced              | When a new video has been scheduled for playback.                                                                               | Show notification for the owner of the next video that their video will start playing |
+| OnUSharpVideoQueueVideoEnded               | After a video has finished playing and was removed from the queue. Does not trigger after the final video has finished playing. | Use as reliable passthrough of USharpVideo's OnVideoEnd event                         |
 | OnUSharpVideoQueueFinalVideoEnded          | Only after the final video has ended.                                                                                           | Start playing background music when queue is empty                                    |
 | OnUSharpVideoQueueSkippedError             | When a video was automatically skipped because an error occured. (..VideoEnded or ..FinalVideoEnded will trigger as well!)      | Display an error message to the users                                                 |
 | OnUSharpVideoQueueCleared                  | When all entries in the queue were cleared by an elevated user                                                                  | Notify users that about the cleared queue                                             |

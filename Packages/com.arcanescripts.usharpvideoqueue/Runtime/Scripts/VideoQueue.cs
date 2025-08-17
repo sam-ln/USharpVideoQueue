@@ -60,6 +60,9 @@ namespace USharpVideoQueue.Runtime
         [UdonSynced] internal bool _videoOwnerIsWaitingForPlayback = false;
         [UdonSynced] internal bool waitingForPauseBetweenVideos = false;
 
+        /// <summary>
+        /// Counts how many videos have been scheduled for playback
+        /// </summary>
         [UdonSynced] public int VideosPlayed = 0;
         internal int videosAnnounced = 0;
 
