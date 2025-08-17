@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace USharpVideoQueue.Runtime
+namespace USharpVideoQueue.Runtime.Controls
 {
     public class Paginator : UdonSharpBehaviour
     {

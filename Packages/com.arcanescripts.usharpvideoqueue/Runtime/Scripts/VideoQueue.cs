@@ -31,7 +31,6 @@ namespace USharpVideoQueue.Runtime
         [FormerlySerializedAs("pauseSecondsBetweenVideos")] [Tooltip("Time to wait between videos")] [SerializeField]
         internal int waitSecondsBeforePlayback = 5;
 
-
         [Tooltip("Should Debug messages be written to the log?")] [SerializeField]
         internal bool enableDebug = false;
 
@@ -41,6 +40,7 @@ namespace USharpVideoQueue.Runtime
         public RPCTimer Timer;
 
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
+        public const string OnUSharpVideoQueueQueueAdvanced = "OnUSharpVideoQueueQueueAdvanced";
         public const string OnUSharpVideoQueuePlayingNextVideo = "OnUSharpVideoQueuePlayingNextVideo";
         public const string OnUSharpVideoQueueSkippedError = "OnUSharpVideoQueueSkippedError";
         public const string OnUSharpVideoQueueVideoEnded = "OnUSharpVideoQueueVideoEnded";
@@ -59,6 +59,9 @@ namespace USharpVideoQueue.Runtime
 
         [UdonSynced] internal bool _videoOwnerIsWaitingForPlayback = false;
         [UdonSynced] internal bool waitingForPauseBetweenVideos = false;
+
+        [UdonSynced] public int VideosPlayed = 0;
+        internal int videosAnnounced = 0;
 
         internal int pauseTimerId = -1;
         internal bool initialized = false;
@@ -346,14 +349,19 @@ namespace USharpVideoQueue.Runtime
             if (waitSecondsBeforePlayback == 0)
             {
                 RPC_MakePlayerPlayFirst();
-                return;
+            }
+            else
+            {
+
+                pauseTimerId = Timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
+                    waitSecondsBeforePlayback);
+                waitingForPauseBetweenVideos = true; ;
+                _SynchronizeData();
+                _LogDebug($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.", true);
             }
 
-            pauseTimerId = Timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
-                waitSecondsBeforePlayback);
-            waitingForPauseBetweenVideos = true;
+            VideosPlayed++;
             _SynchronizeData();
-            Debug.Log($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.");
         }
 
         internal void _CancelScheduledPlayback()
@@ -873,6 +881,11 @@ namespace USharpVideoQueue.Runtime
         protected internal void OnQueueContentChange()
         {
             SendCallback(OnUSharpVideoQueueContentChangeEvent);
+            
+            // Throwing callback here, so that non-owner clients have the synced data when it is thrown.
+            if (videosAnnounced == VideosPlayed) return;
+            SendCallback(OnUSharpVideoQueueQueueAdvanced);
+            videosAnnounced = VideosPlayed;
         }
 
         /* USharpVideoPlayer Event Callbacks */

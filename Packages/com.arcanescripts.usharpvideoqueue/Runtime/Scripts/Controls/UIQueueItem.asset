@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: UIQueueItem
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 6701ef6f5047ca04d9d15359630ff7db,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 7823522938df80a4795c5b62ec6901f4,
     type: 2}
   udonAssembly: 
   assemblyError: 
@@ -21,7 +21,7 @@ MonoBehaviour:
   compiledVersion: 2
   behaviourSyncMode: 1
   hasInteractEvent: 0
-  scriptID: 4364418821677697947
+  scriptID: 4160984942127301266
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
@@ -416,7 +416,7 @@ MonoBehaviour:
       Data: 20|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: USharpVideoQueue.Runtime.QueueControls, com.arcanescripts.usharpvideoqueue
+      Data: USharpVideoQueue.Runtime.Controls.QueueControls, com.arcanescripts.usharpvideoqueue
     - Name: 
       Entry: 8
       Data: 

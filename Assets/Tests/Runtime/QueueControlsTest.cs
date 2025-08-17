@@ -2,6 +2,7 @@ using Moq;
 using NUnit.Framework;
 using UnityEngine;
 using USharpVideoQueue.Runtime;
+using USharpVideoQueue.Runtime.Controls;
 using USharpVideoQueue.Tests.Runtime.TestUtils;
 using VRC.SDK3.Components;
 using VRC.SDKBase;

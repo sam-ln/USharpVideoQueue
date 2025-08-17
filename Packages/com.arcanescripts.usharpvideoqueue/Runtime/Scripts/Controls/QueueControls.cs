@@ -4,13 +4,14 @@ using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 
-namespace USharpVideoQueue.Runtime
+namespace USharpVideoQueue.Runtime.Controls
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [DefaultExecutionOrder(-10)]
     public class QueueControls : UdonSharpBehaviour
     {
         public VideoQueue Queue;
+        public VideoRemovalWarningModal WarningModal;
         public VRCUrlInputField UIURLInput;
         public Text UIURLInputText;
         public bool SetPageAutomatically;
@@ -52,6 +53,16 @@ namespace USharpVideoQueue.Runtime
         {
             UpdateQueueItems();
             UpdateURLInputFieldEnabled(Queue.IsPlayerPermittedToQueueCustomVideos(localPlayerId));
+        }
+
+        public void OnUSharpVideoQueueQueueAdvanced()
+        {
+            WarningModal.Close();
+        }
+
+        public void OnUSharpVideoQueueFinalVideoEnded()
+        {
+            WarningModal.Close();
         }
 
         public void SetCurrentPage(int currentPage)
@@ -163,7 +174,19 @@ namespace USharpVideoQueue.Runtime
 
         public void RemoveRank(int rank)
         {
-            Queue.RemoveVideo(firstIndexOfPage(CurrentPage) + rank);
+            int index = firstIndexOfPage(CurrentPage) + rank;
+            if (index == 0 && Queue.VideoOwnerIsWaitingForPlayback)
+            {
+                WarningModal.Open();
+                return;
+            }
+            
+            Queue.RemoveVideo(index);
+        }
+
+        public void ConfirmFirstVideoRemoval()
+        {
+            Queue.RemoveVideo(0);
         }
 
         public void MoveUpRank(int rank)
