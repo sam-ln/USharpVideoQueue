@@ -84,7 +84,7 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
             };
             queueMock.Setup(queue => queue._GetLocalPlayer()).Returns(mockSet.Player);
             queueMock.Setup(queue => queue._GetPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
-            queueMock.Object.Start();
+            //queueMock.Object.Start();
             return mockSet;
         }
 
