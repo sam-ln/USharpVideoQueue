@@ -82,7 +82,7 @@ namespace USharpVideoQueue.Runtime
             private set => _videoOwnerIsWaitingForPlayback = value;
         }
 
-        protected internal virtual void Start()
+        protected virtual void Start()
         {
             EnsureInitialized();
         }
