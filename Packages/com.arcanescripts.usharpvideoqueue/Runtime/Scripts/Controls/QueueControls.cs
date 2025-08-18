@@ -20,6 +20,7 @@ namespace USharpVideoQueue.Runtime.Controls
         public int CurrentPage = 0;
         public Paginator Paginator;
         internal bool hasPaginator;
+        internal bool hasModal;
         private int localPlayerId;
 
         internal void Start()
@@ -41,7 +42,8 @@ namespace USharpVideoQueue.Runtime.Controls
                 Queue.RegisterCallbackReceiver(this);
             }
 
-            hasPaginator = !(Paginator == null);
+            hasPaginator = Paginator != null;
+            hasModal = WarningModal != null;
 
             if (registeredQueueItems == null)
                 registeredQueueItems = new UIQueueItem[0];
@@ -57,17 +59,17 @@ namespace USharpVideoQueue.Runtime.Controls
 
         public void OnUSharpVideoQueueHasAdvanced()
         {
-            WarningModal.Close();
+            if(hasModal) WarningModal.Close();
         }
 
         public void OnUSharpVideoQueueFinalVideoEnded()
         {
-            WarningModal.Close();
+            if(hasModal) WarningModal.Close();
         }
 
         public void SetCurrentPage(int currentPage)
         {
-            this.CurrentPage = currentPage;
+            CurrentPage = currentPage;
             UpdateQueueItems();
         }
 
