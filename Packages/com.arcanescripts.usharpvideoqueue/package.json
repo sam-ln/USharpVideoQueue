@@ -1,7 +1,7 @@
 {
   "name": "com.arcanescripts.usharpvideoqueue",
   "displayName": "USharpVideoQueue",
-  "version": "0.8.0-alpha",
+  "version": "0.8.0-alpha.2",
   "unity": "2022.3",
   "description": "Synced Video Queue Asset for USharpVideo ",
   "gitDependencies": {},
