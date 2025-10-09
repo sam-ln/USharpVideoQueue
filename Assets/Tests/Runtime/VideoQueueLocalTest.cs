@@ -58,7 +58,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.OnUSharpVideoPlay();
             queue.QueueVideo(url2);
             //Queued Video were serialized to other players
-            queueMock.Verify(queue => queue.synchronizeData(), Times.AtLeast(2));
+            queueMock.Verify(queue => queue._SynchronizeData(), Times.AtLeast(2));
             //Video Player has played first url
             vpMock.Verify((vp => vp.PlayVideo(url1)), Times.Once);
             queue.SendCustomEvent("OnUSharpVideoEnd");
@@ -91,7 +91,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
         }
 
@@ -101,7 +101,7 @@ namespace USharpVideoQueue.Tests.Runtime
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
 
@@ -121,10 +121,10 @@ namespace USharpVideoQueue.Tests.Runtime
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
             Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
         }
 
@@ -197,7 +197,7 @@ namespace USharpVideoQueue.Tests.Runtime
                 Assert.AreEqual(1, queue.QueuedVideosCount());
                 queue.OnUSharpVideoLoadStart();
                 queue.OnUSharpVideoPlay();
-                queue.RequestRemoveVideo(0);
+                queue.RemoveVideo(0);
                 Assert.AreEqual(0, queue.QueuedVideosCount());
             }
         }
@@ -206,7 +206,7 @@ namespace USharpVideoQueue.Tests.Runtime
         //Assert no Exception
         public void RemoveNotExistingVideo()
         {
-            queue.RequestRemoveVideo(0);
+            queue.RemoveVideo(0);
         }
 
         [Test]
@@ -264,22 +264,22 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.QueueVideo(url2);
             
             //shift url2 up
-            queue.RequestMoveVideo(2, true);
+            queue.MoveVideo(2, true);
             //Ensure url was shifted
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
             //make illegal requests and ensure that queue stays the same (move index 0 down or index 1 up)
-            queue.RequestMoveVideo(0, false);
+            queue.MoveVideo(0, false);
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
-            queue.RequestMoveVideo(1, true);
+            queue.MoveVideo(1, true);
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url2, queue.GetURL(1));
             Assert.AreEqual(url1, queue.GetURL(2));
             //shift url2 back down
-            queue.RequestMoveVideo(1,false);
+            queue.MoveVideo(1,false);
             //ensure initial positions are restored
             Assert.AreEqual(url0, queue.GetURL(0));
             Assert.AreEqual(url1, queue.GetURL(1));

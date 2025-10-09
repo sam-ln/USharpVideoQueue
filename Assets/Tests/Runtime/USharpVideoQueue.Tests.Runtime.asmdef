@@ -21,8 +21,8 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "Moq.dll",
-        "VRCSDKBase.dll",
         "VRCSDK3.dll",
+        "VRCSDKBase.dll",
         "VRC.Udon.Common.dll"
     ],
     "autoReferenced": false,

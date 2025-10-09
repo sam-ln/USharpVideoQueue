@@ -1,13 +1,13 @@
 {
   "name": "com.arcanescripts.usharpvideoqueue",
   "displayName": "USharpVideoQueue",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "unity": "2022.3",
   "description": "Synced Video Queue Asset for USharpVideo ",
   "gitDependencies": {},
   "vpmDependencies": {
-    "com.vrchat.worlds": "3.x.x",
-    "com.arcanescripts.usharpvideo": "1.x.x"
+    "com.arcanescripts.usharpvideo": "1.x.x",
+    "com.vrchat.worlds": ">=3.8.1 <4.0.0"
   },
   "author": {
     "name": "sam-ln",
