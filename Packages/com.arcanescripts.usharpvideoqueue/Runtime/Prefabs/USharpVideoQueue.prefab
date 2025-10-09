@@ -1109,8 +1109,12 @@ MonoBehaviour:
   videoLimitPerUser: 3
   waitSecondsBeforePlayback: 5
   enableDebug: 0
+  urlDomainWhitelist:
+  - youtube.com
+  - youtu.be
+  - googlevideo.com
   VideoPlayer: {fileID: 0}
-  Timer: {fileID: 631352788319460178}
+  timer: {fileID: 631352788319460178}
 --- !u!114 &7270593463141513184
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1701,6 +1705,7 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 7270593463829655396}
   QueueControls: {fileID: 5506882833496539433}
   PageDisplay: {fileID: 7270593463464879721}
+  PageDisplayTextPattern: Page {CurrentPage} of {LastPage}
 --- !u!114 &7270593463829655396
 MonoBehaviour:
   m_ObjectHideFlags: 0

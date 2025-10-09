@@ -4,11 +4,12 @@ using UnityEngine.UI;
 
 namespace USharpVideoQueue.Runtime.Controls
 {
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class Paginator : UdonSharpBehaviour
     {
-
         public QueueControls QueueControls;
         public Text PageDisplay;
+        [SerializeField] private string PageDisplayTextPattern;
 
         void Start()
         {
@@ -20,7 +21,11 @@ namespace USharpVideoQueue.Runtime.Controls
 
         public void UpdatePageNumber()
         {
-            PageDisplay.text = $"Page {QueueControls.CurrentPage + 1} of {QueueControls.LastPage() + 1}";
+            string currentPage = (QueueControls.CurrentPage + 1).ToString();
+            string lastPage = (QueueControls.LastPage() + 1).ToString();
+            string updatedPageText = PageDisplayTextPattern.Replace("{CurrentPage}", currentPage)
+                .Replace("{LastPage}", lastPage);
+            PageDisplay.text = updatedPageText;
         }
 
         public void OnNextPressed()
@@ -34,6 +39,5 @@ namespace USharpVideoQueue.Runtime.Controls
             if (QueueControls.CurrentPage == 0) return;
             QueueControls.SetCurrentPage(QueueControls.CurrentPage - 1);
         }
-
     }
 }

@@ -28,16 +28,21 @@ namespace USharpVideoQueue.Runtime
         [Tooltip("Individual limit per user for queued videos")] [SerializeField] [UdonSynced]
         internal int videoLimitPerUser = 3;
 
-        [FormerlySerializedAs("pauseSecondsBetweenVideos")] [Tooltip("Time to wait between videos")] [SerializeField]
+        [FormerlySerializedAs("pauseSecondsBetweenVideos")] [Tooltip("Time to wait in between videos. It's recommended to keep this value above 2 seconds to allow networked data in USharpVideoPlayer to settle.")] [SerializeField]
         internal int waitSecondsBeforePlayback = 5;
 
         [Tooltip("Should Debug messages be written to the log?")] [SerializeField]
         internal bool enableDebug = false;
 
+        [Tooltip(
+            "Videos from domains which are not on this list will not be added to the queue. Prevents IP-Grabbers in private instances. If the list is empty, all domains are allowed.")]
+        [SerializeField]
+        internal string[] urlDomainWhitelist;
+
         [Tooltip("The USharpVideoPlayer object that this queue should manage")]
         public USharpVideoPlayer VideoPlayer;
 
-        public RPCTimer Timer;
+        [SerializeField] internal RPCTimer timer;
 
         public const string OnUSharpVideoQueueContentChangeEvent = "OnUSharpVideoQueueContentChange";
         public const string OnUSharpVideoQueueQueueHasAdvanced = "OnUSharpVideoQueueHasAdvanced";
@@ -59,11 +64,9 @@ namespace USharpVideoQueue.Runtime
 
         [UdonSynced] internal bool _videoOwnerIsWaitingForPlayback = false;
         [UdonSynced] internal bool waitingForPauseBetweenVideos = false;
-
-        /// <summary>
-        /// Counts how many videos have been scheduled for playback
-        /// </summary>
-        [UdonSynced] public int VideosPlayed = 0;
+        
+        [UdonSynced] internal int videosPlayed = 0;
+        
         internal int videosAnnounced = 0;
 
         internal int pauseTimerId = -1;
@@ -102,7 +105,7 @@ namespace USharpVideoQueue.Runtime
                 return;
             }
 
-            if (Equals(Timer, null))
+            if (Equals(timer, null))
             {
                 _LogError(
                     "Critical! VideoQueue is missing RPCTimer reference! Please check in the inspector!");
@@ -216,6 +219,15 @@ namespace USharpVideoQueue.Runtime
             {
                 _LogWarning(
                     $"Video with title '{title}', requested by player{_GetPlayerInfo(playerID)}, was not queued because the URL format was invalid!",
+                    true);
+                return;
+            }
+
+            if (urlDomainWhitelist != null && urlDomainWhitelist.Length > 0 &&
+                !Validation.UrlIsOfAllowedDomain(url.Get(), urlDomainWhitelist))
+            {
+                _LogWarning(
+                    $"Video with title '{title}', requested by player{_GetPlayerInfo(playerID)}, was not queued because the domain was not whitelisted!",
                     true);
                 return;
             }
@@ -356,20 +368,20 @@ namespace USharpVideoQueue.Runtime
             else
             {
 
-                pauseTimerId = Timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
+                pauseTimerId = timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
                     waitSecondsBeforePlayback);
                 waitingForPauseBetweenVideos = true; ;
                 _SynchronizeData();
                 _LogDebug($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.", true);
             }
 
-            VideosPlayed++;
+            videosPlayed++;
             _SynchronizeData();
         }
 
         internal void _CancelScheduledPlayback()
         {
-            if (pauseTimerId != -1) Timer.Cancel(pauseTimerId);
+            if (pauseTimerId != -1) timer.Cancel(pauseTimerId);
             _LogDebug($"Scheduled playback has been cancelled for timer id {pauseTimerId}");
             pauseTimerId = -1;
             waitingForPauseBetweenVideos = false;
@@ -877,7 +889,7 @@ namespace USharpVideoQueue.Runtime
             else
             {
                 _LogDebug("You are no longer the owner! Cancelling running RPC timers!");
-                Timer.CancelAll();
+                timer.CancelAll();
             }
         }
 
@@ -888,9 +900,9 @@ namespace USharpVideoQueue.Runtime
             SendCallback(OnUSharpVideoQueueContentChangeEvent);
             
             // Throwing callback here, so that non-owner clients have the synced data when it is thrown.
-            if (videosAnnounced == VideosPlayed) return;
+            if (videosAnnounced == videosPlayed) return;
             SendCallback(OnUSharpVideoQueueQueueHasAdvanced);
-            videosAnnounced = VideosPlayed;
+            videosAnnounced = videosPlayed;
         }
 
         /* USharpVideoPlayer Event Callbacks */
@@ -1019,6 +1031,8 @@ namespace USharpVideoQueue.Runtime
         {
             if (string.IsNullOrEmpty(callbackName)) return;
 
+            _LogDebug($"Sent Callback '{callbackName}'" + (broadcast ? " as broadcast" : ""));
+            
             if (broadcast)
             {
                 SendCustomNetworkEvent(NetworkEventTarget.All, nameof(ReceiveBroadcastCallback), callbackName);
@@ -1026,12 +1040,14 @@ namespace USharpVideoQueue.Runtime
             }
 
             if (registeredCallbackReceivers == null || registeredCallbackReceivers.Length == 0) return;
-
+            
             foreach (UdonSharpBehaviour callbackReceiver in registeredCallbackReceivers)
             {
                 callbackReceiver.SendCustomEvent(callbackName);
-                _LogDebug($"Sent Callback '{callbackName}'");
+                
             }
+            
+            _LogDebug($"Sent Callback '{callbackName}'");
         }
 
         /// <summary>
