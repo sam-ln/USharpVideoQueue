@@ -446,6 +446,8 @@ namespace USharpVideoQueue.Runtime
         public void RPC_OnVideoOwnerVideoEnd(int playerID)
         {
             _LogRequest(nameof(RPC_OnVideoOwnerVideoEnd), playerID);
+            //Failsafe to mitigate unwanted skips
+            if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
             _SkipToNextVideo();
         }
 
