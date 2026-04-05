@@ -65,10 +65,10 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueCustomURLsDisabled = "OnUSharpVideoQueueCustomURLsDisabled";
         public const string OnUSharpVideoQueueVideoLimitPerUserChanged = "OnUSharpVideoQueueVideoLimitPerUserChanged";
         public const string OnUSharpVideoQueueQueueingSuccessful = "OnUSharpVideoQueueQueueingSuccessful";
-        public const string OnUSharpVideoQueueQueueingFailedQueueFull = "OnUSharpVideoQueueLocalPlayerQueueingFailedQueueFull";
-        public const string OnUSharpVideoQueueQueueingFailedLimitReached = "OnUSharpVideoQueueLocalPlayerQueueingFailedLimitReached";
-        public const string OnUSharpVideoQueueQueueingFailedNotWhitelisted = "OnUSharpVideoQueueLocalPlayerQueueingFailedNotWhitelisted";
-        public const string OnUSharpVideoQueueQueueingFailedInvalidUrl = "OnUSharpVideoQueueLocalPlayerQueueingFailedInvalidUrl";
+        public const string OnUSharpVideoQueueQueueingFailedQueueFull = "OnUSharpVideoQueueQueueingFailedQueueFull";
+        public const string OnUSharpVideoQueueQueueingFailedLimitReached = "OnUSharpVideoQueueQueueingFailedLimitReached";
+        public const string OnUSharpVideoQueueQueueingFailedNotWhitelisted = "OnUSharpVideoQueueQueueingFailedNotWhitelisted";
+        public const string OnUSharpVideoQueueQueueingFailedInvalidUrl = "OnUSharpVideoQueueQueueingFailedInvalidUrl";
         
         internal UdonSharpBehaviour[] registeredCallbackReceivers = new UdonSharpBehaviour[0];
 
