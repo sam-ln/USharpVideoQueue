@@ -10,6 +10,15 @@ using VRC.Udon.Common.Interfaces;
 
 namespace USharpVideoQueue.Runtime
 {
+    public enum QueueResult
+    {
+        Success,
+        QueueFull,
+        LimitReached,
+        NotWhitelisted,
+        InvalidUrl
+    }
+    
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     [DefaultExecutionOrder(-100)]
     public class VideoQueue : UdonSharpBehaviour
@@ -33,7 +42,7 @@ namespace USharpVideoQueue.Runtime
 
         [Tooltip("Should Debug messages be written to the log?")] [SerializeField]
         internal bool enableDebug = false;
-
+        
         [Tooltip(
             "Videos from domains which are not on this list will not be added to the queue. Prevents IP-Grabbers in private instances. If the list is empty, all domains are allowed.")]
         [SerializeField]
@@ -55,7 +64,12 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueCustomURLsEnabled = "OnUSharpVideoQueueCustomURLsEnabled";
         public const string OnUSharpVideoQueueCustomURLsDisabled = "OnUSharpVideoQueueCustomURLsDisabled";
         public const string OnUSharpVideoQueueVideoLimitPerUserChanged = "OnUSharpVideoQueueVideoLimitPerUserChanged";
-
+        public const string OnUSharpVideoQueueQueueingSuccessful = "OnUSharpVideoQueueQueueingSuccessful";
+        public const string OnUSharpVideoQueueQueueingFailedQueueFull = "OnUSharpVideoQueueLocalPlayerQueueingFailedQueueFull";
+        public const string OnUSharpVideoQueueQueueingFailedLimitReached = "OnUSharpVideoQueueLocalPlayerQueueingFailedLimitReached";
+        public const string OnUSharpVideoQueueQueueingFailedNotWhitelisted = "OnUSharpVideoQueueLocalPlayerQueueingFailedNotWhitelisted";
+        public const string OnUSharpVideoQueueQueueingFailedInvalidUrl = "OnUSharpVideoQueueLocalPlayerQueueingFailedInvalidUrl";
+        
         internal UdonSharpBehaviour[] registeredCallbackReceivers = new UdonSharpBehaviour[0];
 
         [UdonSynced] internal VRCUrl[] queuedVideos;
@@ -72,7 +86,6 @@ namespace USharpVideoQueue.Runtime
         internal int pauseTimerId = -1;
         internal bool initialized = false;
         internal int localPlayerId;
-
 
         /// <summary>
         /// Will be true if the player is currently loading a video or 
@@ -220,6 +233,7 @@ namespace USharpVideoQueue.Runtime
                 _LogWarning(
                     $"Video with title '{title}', requested by player{_GetPlayerInfo(playerID)}, was not queued because the URL format was invalid!",
                     true);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_OnQueueResultReceived), playerID, QueueResult.InvalidUrl);
                 return;
             }
 
@@ -229,6 +243,7 @@ namespace USharpVideoQueue.Runtime
                 _LogWarning(
                     $"Video with title '{title}', requested by player{_GetPlayerInfo(playerID)}, was not queued because the domain was not whitelisted!",
                     true);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_OnQueueResultReceived), playerID, QueueResult.NotWhitelisted);
                 return;
             }
 
@@ -237,6 +252,7 @@ namespace USharpVideoQueue.Runtime
                 _LogWarning(
                     $"Video with title '{title}', requested by player {_GetPlayerInfo(playerID)}, was not queued because the player reached their personal limit!",
                     true);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_OnQueueResultReceived), playerID, QueueResult.LimitReached);
                 return;
             }
 
@@ -245,11 +261,13 @@ namespace USharpVideoQueue.Runtime
                 _LogWarning(
                     $"Video with title '{title}', requested by player {_GetPlayerInfo(playerID)}, was not queued because the queue is full!",
                     true);
+                SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_OnQueueResultReceived), playerID, QueueResult.QueueFull);
                 return;
             }
 
             bool wasEmpty = IsEmpty(queuedVideos);
             _EnqueueVideoData(url, title, playerID);
+            SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_OnQueueResultReceived), playerID, QueueResult.Success);
             if (wasEmpty) _SchedulePlayback();
         }
 
@@ -276,6 +294,31 @@ namespace USharpVideoQueue.Runtime
             _CancelScheduledPlayback();
 
             SendCallback(OnUSharpVideoQueueCleared, true);
+        }
+
+        [NetworkCallable]
+        public void RPC_OnQueueResultReceived(int playerId, QueueResult result)
+        {
+            if(playerId != localPlayerId) return;
+
+            switch (result)
+            {
+                case QueueResult.Success:
+                    SendCallback(OnUSharpVideoQueueQueueingSuccessful);
+                    break;
+                case QueueResult.QueueFull:
+                    SendCallback(OnUSharpVideoQueueQueueingFailedQueueFull);
+                    break;
+                case QueueResult.LimitReached:
+                    SendCallback(OnUSharpVideoQueueQueueingFailedLimitReached);
+                    break;
+                case QueueResult.NotWhitelisted:
+                    SendCallback(OnUSharpVideoQueueQueueingFailedNotWhitelisted);
+                    break;
+                case QueueResult.InvalidUrl:
+                    SendCallback(OnUSharpVideoQueueQueueingFailedInvalidUrl);
+                    break;
+            }
         }
 
         [NetworkCallable]
