@@ -69,6 +69,7 @@ namespace USharpVideoQueue.Runtime
         public const string OnUSharpVideoQueueQueueingFailedLimitReached = "OnUSharpVideoQueueQueueingFailedLimitReached";
         public const string OnUSharpVideoQueueQueueingFailedNotWhitelisted = "OnUSharpVideoQueueQueueingFailedNotWhitelisted";
         public const string OnUSharpVideoQueueQueueingFailedInvalidUrl = "OnUSharpVideoQueueQueueingFailedInvalidUrl";
+        public const string OnUSharpVideoQueueLocalPlayerIsUp = "OnUSharpVideoQueueLocalPlayerIsUp";
         
         internal UdonSharpBehaviour[] registeredCallbackReceivers = new UdonSharpBehaviour[0];
 
@@ -489,6 +490,7 @@ namespace USharpVideoQueue.Runtime
             if (localPlayerId != playerID) return;
 
             _LogDebug($"{nameof(RPC_InvokeUserPlay)} received by Player {_GetPlayerInfo(playerID)}: {url.Get()}", true);
+            SendCallback(OnUSharpVideoQueueLocalPlayerIsUp);
             VideoPlayer.PlayVideo(url);
         }
 
