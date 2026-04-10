@@ -18,6 +18,12 @@ namespace USharpVideoQueue.Runtime
         NotWhitelisted,
         InvalidUrl
     }
+
+    public enum VideoPlayerBackend
+    {
+        Unity,
+        AVPro
+    }
     
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
     [DefaultExecutionOrder(-100)]
@@ -213,6 +219,17 @@ namespace USharpVideoQueue.Runtime
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnSetCustomUrlInputEnabledRequested),
                 localPlayerId, enabled);
 
+        /// <summary>
+        /// Sets the video playe backend to either Unity Video Player or AVPro. The request is sent to the owner and will only be applied if the
+        /// sender has elevated rights.
+        /// </summary>
+        /// <param name="backend">The video player backend implementation to be utilized.</param>
+        public void SetVideoPlayerBackend(VideoPlayerBackend backend)
+        {
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnSetVideoPlayerBackendRequested),
+                localPlayerId, backend);
+        }
+
 
         // Request Executing Methods
 
@@ -398,6 +415,30 @@ namespace USharpVideoQueue.Runtime
             customUrlInputEnabled = enabled;
             _SynchronizeData();
             SendCallback(enabled ? OnUSharpVideoQueueCustomURLsEnabled : OnUSharpVideoQueueCustomURLsDisabled, true);
+        }
+
+        [NetworkCallable]
+
+        public void RPC_OnSetVideoPlayerBackendRequested(int playerId, VideoPlayerBackend backend)
+        {
+            _LogRequest(nameof(SetVideoPlayerBackend), playerId, backend);
+            if (!_PlayerWithIDHasElevatedRights(playerId))
+            {
+                _LogRequestDenied(nameof(SetVideoPlayerBackend), playerId);
+                return;
+            }
+
+            switch (backend)
+            {
+                case VideoPlayerBackend.Unity:
+                    if (VideoPlayer.IsUsingUnityPlayer()) return;
+                    VideoPlayer.SetToUnityPlayer();
+                    break;
+                case VideoPlayerBackend.AVPro:
+                    if (VideoPlayer.IsUsingAVProPlayer()) return;
+                    VideoPlayer.SetToAVProPlayer();
+                    break;
+            }
         }
 
 
@@ -996,6 +1037,21 @@ namespace USharpVideoQueue.Runtime
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoPlay),
                     localPlayerId);
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
+        }
+
+        /// <summary>
+        /// Receives the <c>OnUSharpVideoPlay</c> event from the linked <see cref="USharpVideoPlayer"/>
+        /// Resumes playback after interruption by a player backend change.
+        /// </summary>
+        public void OnUSharpVideoModeChange()
+        {
+            _LogDebug($"Received USharpVideoModeChange!");
+            if(IsEmpty(queuedVideos)) return;
+
+            if (queuedByPlayer[0] == localPlayerId)
+            {
+                VideoPlayer.PlayVideo(queuedVideos[0]);
+            }
         }
 
         /* Callback Handling */
