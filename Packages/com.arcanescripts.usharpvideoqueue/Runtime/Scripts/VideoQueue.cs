@@ -379,6 +379,8 @@ namespace USharpVideoQueue.Runtime
                 return;
             }
 
+            if (videoLimitPerUser == limit) return;
+
             if (limit < 0) return;
             videoLimitPerUser = limit;
             _SynchronizeData();
@@ -411,6 +413,7 @@ namespace USharpVideoQueue.Runtime
                 _LogRequestDenied(nameof(SetCustomUrlInputEnabled), playerID);
                 return;
             }
+            if(customUrlInputEnabled == enabled) return;
 
             customUrlInputEnabled = enabled;
             _SynchronizeData();
