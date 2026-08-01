@@ -84,7 +84,13 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
             };
             queueMock.Setup(queue => queue._GetLocalPlayer()).Returns(mockSet.Player);
             queueMock.Setup(queue => queue._GetPlayerID(mockSet.Player)).Returns(mockSet.PlayerId);
-            //queueMock.Object.Start();
+
+            Mock<RPCTimer> timerMock = new Mock<RPCTimer>();
+            mockSet.TimerMock = timerMock;
+            queueMock.Object.timer = timerMock.Object;
+            //Play scheduled videos immediately; the RPCTimer's Update loop does not run in tests.
+            queueMock.Object.waitSecondsBeforePlayback = 0;
+            queueMock.Object.EnsureInitialized();
             return mockSet;
         }
 
@@ -99,6 +105,7 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
         {
             public Mock<VideoQueue> VideoQueueMock { get; set; }
             public Mock<USharpVideoPlayer> VideoPlayerMock { get; set; }
+            public Mock<RPCTimer> TimerMock { get; set; }
             public Mock<VideoQueueEventReceiver> EventReceiver { get; set; }
             public VRCPlayerApi Player { get; set; }
             public int ServerTime { get; set; }

@@ -87,8 +87,14 @@ namespace USharpVideoQueue.Runtime
         [UdonSynced] internal bool waitingForPauseBetweenVideos = false;
         
         [UdonSynced] internal int videosPlayed = 0;
-        
+
         internal int videosAnnounced = 0;
+        internal bool receivedFirstDeserialization = false;
+
+        // Playback number this client was last asked to play via RPC_InvokeUserPlay. Echoed back
+        // in the end/error/play reports so the owner can discard reports that refer to an earlier
+        // playback (duplicate or late events would otherwise remove entries that never played).
+        internal int localPlaybackNumber = -1;
 
         internal int pauseTimerId = -1;
         internal bool initialized = false;
@@ -135,17 +141,29 @@ namespace USharpVideoQueue.Runtime
             initialized = true;
             localPlayerId = _GetPlayerID(_GetLocalPlayer());
 
-            if (queuedVideos == null) queuedVideos = new VRCUrl[maxQueueItems];
-            if (queuedByPlayer == null) queuedByPlayer = new int[maxQueueItems];
-            if (queuedTitles == null) queuedTitles = new string[maxQueueItems];
-            VideoPlayer.RegisterCallbackReceiver(this);
-
-            for (int i = 0; i < maxQueueItems; i++)
+            // Only fill arrays this client allocated itself. Non-null arrays hold state that was
+            // already received via OnDeserialization (which can run before Start on late joiners);
+            // clearing them here would wipe the local replica — and wipe the queue for everyone
+            // if this client later becomes the owner and serializes.
+            if (queuedVideos == null)
             {
-                queuedVideos[i] = VRCUrl.Empty;
-                queuedTitles[i] = string.Empty;
-                queuedByPlayer[i] = -1;
+                queuedVideos = new VRCUrl[maxQueueItems];
+                for (int i = 0; i < maxQueueItems; i++) queuedVideos[i] = VRCUrl.Empty;
             }
+
+            if (queuedTitles == null)
+            {
+                queuedTitles = new string[maxQueueItems];
+                for (int i = 0; i < maxQueueItems; i++) queuedTitles[i] = string.Empty;
+            }
+
+            if (queuedByPlayer == null)
+            {
+                queuedByPlayer = new int[maxQueueItems];
+                for (int i = 0; i < maxQueueItems; i++) queuedByPlayer[i] = -1;
+            }
+
+            VideoPlayer.RegisterCallbackReceiver(this);
 
             _LogDebug(
                 $"USharpVideoQueue initialized! Local Player is {_GetPlayerInfo(localPlayerId)}. You are {(_IsOwner() ? "" : "not ")}the owner!");
@@ -182,7 +200,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="directionUp">True to move up; false to move down.</param>
         public void MoveVideo(int index, bool directionUp) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnMoveVideoRequested),
-                localPlayerId, index, directionUp);
+                localPlayerId, index, directionUp, GetURL(index).Get());
 
         /// <summary>
         /// Removes a video from the queue. The request is sent to the object owner over the network and will execute
@@ -191,7 +209,7 @@ namespace USharpVideoQueue.Runtime
         /// <param name="index">Zero-based index of the video to remove.</param>
         public void RemoveVideo(int index) =>
             SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnRemoveVideoRequested),
-                localPlayerId, index);
+                localPlayerId, index, GetURL(index).Get());
 
         /// <summary>
         /// Sets the per-user queue limit. The request is sent to the owner and will only be applied if the sender has elevated rights.
@@ -244,7 +262,16 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnQueueVideoRequested(int playerID, VRCUrl url, string title)
         {
+            //Owner-targeted events can still be delivered to a client that just lost ownership;
+            //only the current owner may mutate authoritative state. (Same guard on all
+            //mutating request handlers below.)
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(QueueVideo), playerID, url, title);
+
+            //An empty title would collide with the empty-slot sentinel of the titles array and
+            //desynchronize the parallel arrays; fall back to the URL as the title.
+            if (string.IsNullOrEmpty(title)) title = url != null ? url.Get() : string.Empty;
 
             if (url == null || !Validation.ValidateURL(url.Get()))
             {
@@ -292,6 +319,8 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnClearRequested(int playerID)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(Clear), playerID);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
@@ -340,11 +369,22 @@ namespace USharpVideoQueue.Runtime
         }
 
         [NetworkCallable]
-        public void RPC_OnMoveVideoRequested(int playerID, int index, bool directionUp)
+        public void RPC_OnMoveVideoRequested(int playerID, int index, bool directionUp, string expectedUrl)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(MoveVideo), playerID, index, directionUp);
 
             if (!IsPlayerAbleToMoveVideo(playerID, index, directionUp))
+            {
+                _LogRequestDenied(nameof(MoveVideo), playerID);
+                return;
+            }
+
+            //The index was computed against the requester's local replica, which may lag behind
+            //the owner's state. If a different video sits at that index by now, executing the
+            //request would move the wrong entry.
+            if (GetURL(index).Get() != expectedUrl)
             {
                 _LogRequestDenied(nameof(MoveVideo), playerID);
                 return;
@@ -355,11 +395,22 @@ namespace USharpVideoQueue.Runtime
         }
 
         [NetworkCallable]
-        public void RPC_OnRemoveVideoRequested(int playerID, int index)
+        public void RPC_OnRemoveVideoRequested(int playerID, int index, string expectedUrl)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(RemoveVideo), playerID, index);
 
             if (!IsPlayerPermittedToRemoveVideo(playerID, index))
+            {
+                _LogRequestDenied(nameof(RemoveVideo), playerID);
+                return;
+            }
+
+            //The index was computed against the requester's local replica, which may lag behind
+            //the owner's state. If a different video sits at that index by now (e.g. the queue
+            //advanced in the meantime), executing the request would remove the wrong entry.
+            if (GetURL(index).Get() != expectedUrl)
             {
                 _LogRequestDenied(nameof(RemoveVideo), playerID);
                 return;
@@ -371,6 +422,8 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnSetVideoLimitPerUserRequested(int playerID, int limit)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(SetVideoLimitPerUser), playerID, limit);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
@@ -390,6 +443,8 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnSetVideoLimitPerUserEnabledRequested(int playerID, bool enabled)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(SetVideoLimitPerUserEnabled), playerID, enabled);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
@@ -406,6 +461,8 @@ namespace USharpVideoQueue.Runtime
         [NetworkCallable]
         public void RPC_OnSetCustomUrlInputEnabledRequested(int playerID, bool enabled)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(SetCustomUrlInputEnabled), playerID, enabled);
 
             if (!_PlayerWithIDHasElevatedRights(playerID))
@@ -424,6 +481,8 @@ namespace USharpVideoQueue.Runtime
 
         public void RPC_OnSetVideoPlayerBackendRequested(int playerId, VideoPlayerBackend backend)
         {
+            if (!_IsOwner()) return;
+
             _LogRequest(nameof(SetVideoPlayerBackend), playerId, backend);
             if (!_PlayerWithIDHasElevatedRights(playerId))
             {
@@ -449,22 +508,23 @@ namespace USharpVideoQueue.Runtime
 
         internal void _SchedulePlayback()
         {
+            // Increment before dispatching so RPC_MakePlayerPlayFirst always reads the playback
+            // number of the video it is about to start, including on the synchronous path below.
+            videosPlayed++;
+            _SynchronizeData();
+
             if (waitSecondsBeforePlayback == 0)
             {
                 RPC_MakePlayerPlayFirst();
             }
             else
             {
-
                 pauseTimerId = timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
                     waitSecondsBeforePlayback);
-                waitingForPauseBetweenVideos = true; ;
+                waitingForPauseBetweenVideos = true;
                 _SynchronizeData();
                 _LogDebug($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.", true);
             }
-
-            videosPlayed++;
-            _SynchronizeData();
         }
 
         internal void _CancelScheduledPlayback()
@@ -489,7 +549,13 @@ namespace USharpVideoQueue.Runtime
             waitingForPauseBetweenVideos = false;
             pauseTimerId = -1;
 
-            if (QueuedVideosCount() == 0) return;
+            if (QueuedVideosCount() == 0)
+            {
+                //The cleared pause flag must still be serialized, otherwise every future owner
+                //would see a stale 'true' and re-arm a phantom playback on ownership transfer.
+                _SynchronizeData();
+                return;
+            }
 
             VRCUrl nextURL = (VRCUrl)First(queuedVideos);
             int videoOwnerPlayerID = (int)First(queuedByPlayer);
@@ -498,13 +564,12 @@ namespace USharpVideoQueue.Runtime
             _SynchronizeData();
 
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_InvokeUserPlay),
-                videoOwnerPlayerID, nextURL);
+                videoOwnerPlayerID, nextURL, videosPlayed);
         }
 
         /// <summary>
         /// Skips the currently playing video and advances to the next item in the queue.
         /// </summary>
-        /// <param name="force">If true, removes the first video even when the owner is currently loading.</param>
         private void _SkipToNextVideo()
         {
             _RemoveVideoData(0);
@@ -528,11 +593,13 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Target player ID.</param>
         /// <param name="url">URL to play.</param>
+        /// <param name="playbackNumber">Playback number of this video, echoed back in end/error/play reports.</param>
         [NetworkCallable]
-        public void RPC_InvokeUserPlay(int playerID, VRCUrl url)
+        public void RPC_InvokeUserPlay(int playerID, VRCUrl url, int playbackNumber)
         {
             if (localPlayerId != playerID) return;
 
+            localPlaybackNumber = playbackNumber;
             _LogDebug($"{nameof(RPC_InvokeUserPlay)} received by Player {_GetPlayerInfo(playerID)}: {url.Get()}", true);
             SendCallback(OnUSharpVideoQueueLocalPlayerIsUp);
             VideoPlayer.PlayVideo(url);
@@ -543,12 +610,18 @@ namespace USharpVideoQueue.Runtime
         /// Owner-side callback when the video finishes successfully on the video owner's client. Advances the queue.
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
+        /// <param name="playbackNumber">Playback number the report refers to.</param>
         [NetworkCallable]
-        public void RPC_OnVideoOwnerVideoEnd(int playerID)
+        public void RPC_OnVideoOwnerVideoEnd(int playerID, int playbackNumber)
         {
-            _LogRequest(nameof(RPC_OnVideoOwnerVideoEnd), playerID);
-            //Failsafe to mitigate unwanted skips
+            if (!_IsOwner()) return;
+
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoEnd), playerID, playbackNumber);
+            //Failsafe to mitigate unwanted skips: the report must come from the owner of the
+            //current head entry and refer to the current playback. Duplicate or late end events
+            //(AVPro can fire OnVideoEnd more than once) would otherwise remove unplayed entries.
             if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
+            if (playbackNumber != videosPlayed) return;
             _SkipToNextVideo();
         }
 
@@ -558,10 +631,19 @@ namespace USharpVideoQueue.Runtime
         /// Clears the waiting flag and advances the queue.
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
+        /// <param name="playbackNumber">Playback number the report refers to.</param>
         [NetworkCallable]
-        public void RPC_OnVideoOwnerVideoError(int playerID)
+        public void RPC_OnVideoOwnerVideoError(int playerID, int playbackNumber)
         {
-            _LogRequest(nameof(RPC_OnVideoOwnerVideoError), playerID);
+            if (!_IsOwner()) return;
+
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoError), playerID, playbackNumber);
+
+            //Same failsafe as RPC_OnVideoOwnerVideoEnd. Errors are especially prone to firing
+            //multiple times for a single video (AVPro multi-fire, USharpVideo retries); without
+            //this guard every spurious report would remove one queue entry.
+            if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
+            if (playbackNumber != videosPlayed) return;
 
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
@@ -588,10 +670,16 @@ namespace USharpVideoQueue.Runtime
         /// Clears the waiting flag and synchronizes state.
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
+        /// <param name="playbackNumber">Playback number the report refers to.</param>
         [NetworkCallable]
-        public void RPC_OnVideoOwnerVideoPlay(int playerID)
+        public void RPC_OnVideoOwnerVideoPlay(int playerID, int playbackNumber)
         {
-            _LogRequest(nameof(RPC_OnVideoOwnerVideoPlay), playerID);
+            if (!_IsOwner()) return;
+
+            _LogRequest(nameof(RPC_OnVideoOwnerVideoPlay), playerID, playbackNumber);
+
+            //A stale play report must not clear the waiting flag of a later video.
+            if (playbackNumber != videosPlayed) return;
 
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
@@ -726,7 +814,19 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         public override void OnDeserialization()
         {
+            //Deserialization can arrive before Start on late joiners.
+            EnsureInitialized();
             _LogDebug("OnDeserialization run!");
+
+            //The initial snapshot only reflects what happened before this client joined;
+            //it must not be announced as a queue advance (late joiners would get a spurious
+            //OnUSharpVideoQueueHasAdvanced, closing open removal dialogs).
+            if (!receivedFirstDeserialization)
+            {
+                receivedFirstDeserialization = true;
+                videosAnnounced = videosPlayed;
+            }
+
             OnQueueContentChange();
         }
 
@@ -760,6 +860,10 @@ namespace USharpVideoQueue.Runtime
 
         internal void _RemoveVideo(int index)
         {
+            //Also rejects negative indices, which would throw in QueueArray.Remove and
+            //permanently halt this behaviour on the owner's client.
+            if (!_IsIndexValid(index)) return;
+
             // Special treatment if currently playing video is removed
             bool videoIsPlaying = index == 0;
             if (videoIsPlaying)
@@ -948,7 +1052,9 @@ namespace USharpVideoQueue.Runtime
         internal virtual void _BecomeOwner() => Networking.SetOwner(Networking.LocalPlayer, gameObject);
         internal virtual bool _IsOwner() => Networking.IsOwner(Networking.LocalPlayer, gameObject);
         internal virtual VRCPlayerApi _GetLocalPlayer() => Networking.LocalPlayer;
-        internal virtual int _GetPlayerID(VRCPlayerApi player) => player.playerId;
+        //VRCPlayerApi objects of players who just left can be invalid or null (see
+        //_RemoveVideosOfPlayerWhoLeft); -1 keeps OnPlayerLeft from crashing in that case.
+        internal virtual int _GetPlayerID(VRCPlayerApi player) => Utilities.IsValid(player) ? player.playerId : -1;
 
         internal virtual bool _IsPlayerWithIDValid(int id) => Utilities.IsValid(VRCPlayerApi.GetPlayerById(id));
 
@@ -1004,7 +1110,8 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoEnd), localPlayerId);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoEnd), localPlayerId,
+                    localPlaybackNumber);
         }
 
         /// <summary>
@@ -1015,7 +1122,7 @@ namespace USharpVideoQueue.Runtime
             _LogDebug($"Received USharpVideoError! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoError),
-                    localPlayerId);
+                    localPlayerId, localPlaybackNumber);
         }
 
         /// <summary>
@@ -1038,7 +1145,7 @@ namespace USharpVideoQueue.Runtime
             _LogDebug($"Received USharpVideoPlay! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoPlay),
-                    localPlayerId);
+                    localPlayerId, localPlaybackNumber);
             SendCallback(OnUSharpVideoQueuePlayingNextVideo);
         }
 

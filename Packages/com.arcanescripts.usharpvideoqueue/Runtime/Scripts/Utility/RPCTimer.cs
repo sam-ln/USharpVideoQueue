@@ -202,7 +202,13 @@ public class RPCTimer : UdonSharpBehaviour
         switch (n)
         {
             case 0:
-                target.SendCustomNetworkEvent(netTarget, eventName);
+                // Self-targeted events still pass through the network-calling queue and its rate
+                // limits; an argless local invoke cannot be dropped, so a scheduled call (e.g.
+                // the pause between videos) always fires.
+                if (netTarget == NetworkEventTarget.Self)
+                    target.SendCustomEvent(eventName);
+                else
+                    target.SendCustomNetworkEvent(netTarget, eventName);
                 break;
             case 1:
                 NetworkCalling.SendCustomNetworkEvent(recv, netTarget, eventName, args[0]);
