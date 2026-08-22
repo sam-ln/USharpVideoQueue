@@ -102,6 +102,15 @@ namespace USharpVideoQueue.Tests.Runtime
         }
 
         [Test]
+        public void ClearFullQueueEmptiesLastSlot()
+        {
+            Clear(full);
+            Assert.AreEqual(VRCUrl.Empty, full[full.Length - 1]);
+            Assert.True(QueueArray.IsEmpty(full));
+            Assert.AreEqual(0, Count(full));
+        }
+
+        [Test]
         public void ShiftContents()
         {
             string[] array = ExampleArray();

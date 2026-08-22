@@ -100,7 +100,7 @@ namespace USharpVideoQueue.Runtime.Utility
 
         public static void Clear(Array queue)
         {
-            for (int i = 0; i < queue.Length-1; i++)
+            for (int i = 0; i < queue.Length; i++)
             {
                 queue.SetValue(EmptyReference(queue), i);
             }
