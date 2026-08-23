@@ -44,6 +44,116 @@ namespace USharpVideoQueue.Tests.Runtime
 
 
         [Test]
+        public void DuplicateOrLateVideoEndReportDoesNotSkipNextVideo()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            queue.QueueVideo(url2);
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoPlay();
+            int playbackNumberOfFirstVideo = queue.videosPlayed;
+
+            //first video ends regularly, second video is up
+            queue.OnUSharpVideoEnd();
+            Assert.AreEqual(1, queue.QueuedVideosCount());
+            Assert.AreEqual(url2, queue.GetURL(0));
+
+            //a duplicate end report for the first video arrives over the network
+            //(e.g. AVPro firing OnVideoEnd twice); both videos were queued by the same player,
+            //so the head-owner check alone would not catch it
+            queue.RPC_OnVideoOwnerVideoEnd(1, playbackNumberOfFirstVideo);
+
+            //the second video must not be skipped
+            Assert.AreEqual(1, queue.QueuedVideosCount());
+            Assert.AreEqual(url2, queue.GetURL(0));
+        }
+
+        [Test]
+        public void DuplicateVideoErrorReportsOnlyRemoveCurrentVideo()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url3 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            queue.QueueVideo(url2);
+            queue.QueueVideo(url3);
+            queue.OnUSharpVideoLoadStart();
+            int playbackNumberOfFirstVideo = queue.videosPlayed;
+
+            //first video fails to load
+            queue.OnUSharpVideoError();
+            Assert.AreEqual(2, queue.QueuedVideosCount());
+
+            //further error events for the same video arrive over the network
+            //(AVPro multi-fire, USharpVideo retries)
+            queue.RPC_OnVideoOwnerVideoError(1, playbackNumberOfFirstVideo);
+            queue.RPC_OnVideoOwnerVideoError(1, playbackNumberOfFirstVideo);
+
+            //only the failed video was removed
+            Assert.AreEqual(2, queue.QueuedVideosCount());
+            Assert.AreEqual(url2, queue.GetURL(0));
+        }
+
+        [Test]
+        public void RemoveRequestWithOutdatedIndexIsIgnored()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            queue.QueueVideo(url2);
+            queue.OnUSharpVideoLoadStart();
+            queue.OnUSharpVideoPlay();
+
+            //a remove request computed against an outdated replica: the requester saw url1
+            //at index 1, but a different video sits there by now
+            queue.RPC_OnRemoveVideoRequested(1, 1, url1.Get());
+            Assert.AreEqual(2, queue.QueuedVideosCount());
+
+            //a request whose expected URL matches the entry is executed
+            queue.RPC_OnRemoveVideoRequested(1, 1, url2.Get());
+            Assert.AreEqual(1, queue.QueuedVideosCount());
+        }
+
+        [Test]
+        public void EnsureInitializedPreservesStateReceivedBeforeStart()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+
+            //Simulate a late joiner whose initial deserialization arrives before Start has run
+            Mock<VideoQueue> joinerMock = new Mock<VideoQueue> { CallBase = true };
+            UdonSharpTestUtils.MockSDKCalls(joinerMock);
+            VideoQueue joiner = joinerMock.Object;
+            joiner.VideoPlayer = new Mock<USharpVideoPlayer>().Object;
+            joiner.timer = new Mock<RPCTimer>().Object;
+
+            UdonSharpTestUtils.SimulateSerialization(queue, joiner);
+            Assert.AreEqual(1, joiner.QueuedVideosCount());
+
+            //Start runs after the initial network state was received
+            joiner.EnsureInitialized();
+
+            //the received queue state must survive initialization
+            Assert.AreEqual(1, joiner.QueuedVideosCount());
+            Assert.AreEqual(url1, joiner.GetURL(0));
+        }
+
+        [Test]
+        public void EmptyTitleFallsBackToUrl()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            var url2 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1, "");
+            queue.QueueVideo(url2, "second");
+
+            //an empty title would collide with the empty-slot sentinel of the titles array
+            //and shift all later titles by one position
+            Assert.AreEqual(url1.Get(), queue.GetTitle(0));
+            Assert.AreEqual("second", queue.GetTitle(1));
+        }
+
+        [Test]
         public void QueueAndFinishVideo()
         {
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();

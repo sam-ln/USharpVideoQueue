@@ -102,12 +102,15 @@ namespace USharpVideoQueue.Tests.Runtime
         }
 
         [Test]
-        public void ClearFullQueueEmptiesLastSlot()
+        public void ClearEmptiesAllSlots()
         {
-            Clear(full);
-            Assert.AreEqual(VRCUrl.Empty, full[full.Length - 1]);
+            QueueArray.Clear(full);
             Assert.True(QueueArray.IsEmpty(full));
+            Assert.False(QueueArray.IsFull(full));
             Assert.AreEqual(0, Count(full));
+            //The last slot must be cleared as well, otherwise a ghost entry
+            //reappears once the queue fills up to capacity again.
+            Assert.AreEqual(VRCUrl.Empty, full[full.Length - 1]);
         }
 
         [Test]

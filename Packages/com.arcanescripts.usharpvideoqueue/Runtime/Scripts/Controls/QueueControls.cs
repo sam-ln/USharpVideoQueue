@@ -129,7 +129,7 @@ namespace USharpVideoQueue.Runtime.Controls
 
         internal int firstIndexOfPage(int page)
         {
-            return CurrentPage * registeredQueueItems.Length;
+            return page * registeredQueueItems.Length;
         }
 
         internal int pageOfIndex(int index)
