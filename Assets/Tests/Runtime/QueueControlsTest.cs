@@ -153,24 +153,38 @@ namespace USharpVideoQueue.Tests.Runtime
             Assert.AreEqual(0, controls.CurrentPage);
         }
 
+        /// <summary>
+        /// An elevated player may always enter custom URLs, so toggling the instance-wide setting
+        /// must never disable their input field.
+        /// </summary>
         [Test]
-        public void URLInputFieldHasCorrectInteractableStateWithElevatedRights()
+        public void URLInputFieldStaysEnabledForElevatedPlayer()
         {
+            //the local player is master of the instance by default, so they have elevated rights
+            queue0.SetCustomUrlInputEnabled(true);
             queue0.SetCustomUrlInputEnabled(false);
-            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.Once());
+
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.AtLeastOnce());
+            controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Never());
         }
-        
+
+        /// <summary>
+        /// A player without elevated rights follows the instance-wide setting. Note that the setting
+        /// is skipped when it already holds the requested value, so each toggle here is a real change.
+        /// </summary>
         [Test]
         public void URLInputFieldHasCorrectInteractableState()
         {
-            //Controls should use queue with no elevated rights
-            controls.Queue = queue1;
+            //make player 1 master, so the local player (player 0) has no elevated rights
+            MockGroup.Master = MockGroup.MockSets[1];
+
             //elevated user enables custom urls
-            queue0.SetCustomUrlInputEnabled(true);
+            queue1.SetCustomUrlInputEnabled(true);
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(true), Times.Once());
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Never());
-            //elevated user enables custom urls
-            queue0.SetCustomUrlInputEnabled(false);
+
+            //elevated user disables custom urls again
+            queue1.SetCustomUrlInputEnabled(false);
             controlsMock.Verify(queueControls => queueControls.UpdateURLInputFieldEnabled(false), Times.Once());
         }
 

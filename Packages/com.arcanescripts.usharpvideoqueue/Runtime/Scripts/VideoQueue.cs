@@ -506,6 +506,10 @@ namespace USharpVideoQueue.Runtime
 
         // Player Coordination
 
+        /// <summary>
+        /// Advances to the next video: arms the playback timer and counts the advance.
+        /// Use <see cref="_ArmPlaybackTimer"/> instead when re-arming for a video that is already pending.
+        /// </summary>
         internal void _SchedulePlayback()
         {
             // Increment before dispatching so RPC_MakePlayerPlayFirst always reads the playback
@@ -513,18 +517,25 @@ namespace USharpVideoQueue.Runtime
             videosPlayed++;
             _SynchronizeData();
 
+            _ArmPlaybackTimer();
+        }
+
+        /// <summary>
+        /// Arms the timer that starts the first video in queue, without counting an advance.
+        /// </summary>
+        internal void _ArmPlaybackTimer()
+        {
             if (waitSecondsBeforePlayback == 0)
             {
                 RPC_MakePlayerPlayFirst();
+                return;
             }
-            else
-            {
-                pauseTimerId = timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
-                    waitSecondsBeforePlayback);
-                waitingForPauseBetweenVideos = true;
-                _SynchronizeData();
-                _LogDebug($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.", true);
-            }
+
+            pauseTimerId = timer.CancelRunningAndSchedule(this, pauseTimerId, nameof(RPC_MakePlayerPlayFirst),
+                waitSecondsBeforePlayback);
+            waitingForPauseBetweenVideos = true;
+            _SynchronizeData();
+            _LogDebug($"Scheduled playback in {waitSecondsBeforePlayback} seconds with timer ID {pauseTimerId}.", true);
         }
 
         internal void _CancelScheduledPlayback()
@@ -622,6 +633,8 @@ namespace USharpVideoQueue.Runtime
             //(AVPro can fire OnVideoEnd more than once) would otherwise remove unplayed entries.
             if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
             if (playbackNumber != videosPlayed) return;
+            //An advance is already scheduled, so this is a duplicate or late event.
+            if (waitingForPauseBetweenVideos) return;
             _SkipToNextVideo();
         }
 
@@ -644,6 +657,12 @@ namespace USharpVideoQueue.Runtime
             //this guard every spurious report would remove one queue entry.
             if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
             if (playbackNumber != videosPlayed) return;
+
+            //Failsafe to mitigate unwanted skips
+            //An advance is already scheduled, so this is a duplicate or late event.
+            //Guarded before clearing the flag, so a late error cannot clear the loading state of the next video.
+            if (waitingForPauseBetweenVideos) return;
+            if (IsEmpty(queuedVideos)) return;
 
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
@@ -1036,7 +1055,7 @@ namespace USharpVideoQueue.Runtime
                 : "[Invalid Player]";
         }
 
-        internal void _LogOwnerAndMaster(bool broadcast = false)
+        internal virtual void _LogOwnerAndMaster(bool broadcast = false)
         {
             VRCPlayerApi owner = Networking.GetOwner(gameObject);
             string ownerInfo = _GetPlayerInfo(owner);
@@ -1078,7 +1097,7 @@ namespace USharpVideoQueue.Runtime
             if (_IsOwner())
             {
                 _LogDebug("You've become the new owner! Rearming running RPC timers!");
-                if (waitingForPauseBetweenVideos) _SchedulePlayback();
+                if (waitingForPauseBetweenVideos) _ArmPlaybackTimer();
             }
 
             else

@@ -91,7 +91,7 @@ public class RPCTimer : UdonSharpBehaviour
     /// The target method MUST be [NetworkCallable] and accept the provided args.
     /// Returns a positive timerId, or -1 if capacity is full / bad input.
     /// </summary>
-    public int CancelRunningAndSchedule(
+    public virtual int CancelRunningAndSchedule(
         UdonSharpBehaviour target,
         int existingTimerId,
         string networkMethodName,
@@ -107,7 +107,7 @@ public class RPCTimer : UdonSharpBehaviour
     /// The target method MUST be [NetworkCallable] and accept the provided args.
     /// Returns a positive timerId, or -1 if capacity is full / bad input.
     /// </summary>
-    public int Schedule(
+    public virtual int Schedule(
         UdonSharpBehaviour target,
         string networkMethodName,
         float delaySeconds,
@@ -147,7 +147,7 @@ public class RPCTimer : UdonSharpBehaviour
     /// <summary>
     /// Cancel a pending timer by id. Returns true if it was pending and got canceled.
     /// </summary>
-    public bool Cancel(int timerId)
+    public virtual bool Cancel(int timerId)
     {
         if (!_initialized || timerId <= 0) return false;
 
@@ -166,7 +166,7 @@ public class RPCTimer : UdonSharpBehaviour
     /// <summary>
     /// Cancel all timers targeting the given behaviour.
     /// </summary>
-    public void CancelAllFor(UdonSharpBehaviour target)
+    public virtual void CancelAllFor(UdonSharpBehaviour target)
     {
         if (!_initialized || target == null) return;
 
@@ -181,7 +181,7 @@ public class RPCTimer : UdonSharpBehaviour
     /// <summary>
     /// Cancel all timers.
     /// </summary>
-    public void CancelAll()
+    public virtual void CancelAll()
     {
         if (!_initialized) return;
 

@@ -78,35 +78,42 @@ namespace USharpVideoQueue.Tests.Runtime
             leavingPlayer.VideoPlayerMock.Verify(vp => vp.PlayVideo(url0), Times.Exactly(1));
         }
 
+        /// <summary>
+        /// Removing the video that is currently loading used to be rejected. Since "Allowing
+        /// removing currently loading videos, but showing a warning" it succeeds and only warns.
+        /// </summary>
         [Test]
-        public void FirstVideoCanOnlyBeRemovedAfterLoadingFinished()
+        public void FirstVideoCanBeRemovedWhileLoading()
         {
             queue0.QueueVideo(url0);
             queue0.OnUSharpVideoLoadStart();
-            queue0.RemoveVideo(0);
-            // video was not removed because it is still loading
-            Assert.AreEqual(1, queue0.QueuedVideosCount());
-            // video player signals loading is finished
-            queue0.OnUSharpVideoLoadStart();
-            queue0.OnUSharpVideoPlay();
 
             queue0.RemoveVideo(0);
-            // video can now be removed
+
             Assert.AreEqual(0, queue0.QueuedVideosCount());
         }
 
         [Test]
-        public void FirstVideoIsRemovedAfterFailedManualRemovalAndPlayerError()
+        public void FirstVideoCanBeRemovedAfterLoadingFinished()
         {
             queue0.QueueVideo(url0);
             queue0.OnUSharpVideoLoadStart();
+            queue0.OnUSharpVideoPlay();
+
             queue0.RemoveVideo(0);
-            // video was not removed because it is still loading
-            Assert.AreEqual(1, queue0.QueuedVideosCount());
-            // video player signals error
-            
+
+            Assert.AreEqual(0, queue0.QueuedVideosCount());
+        }
+
+        [Test]
+        public void FirstVideoIsRemovedAfterPlayerErrorWhileLoading()
+        {
+            queue0.QueueVideo(url0);
+            queue0.OnUSharpVideoLoadStart();
+
+            // video player signals error before playback ever started
             queue0.OnUSharpVideoError();
-            
+
             // video was removed
             Assert.AreEqual(0, queue0.QueuedVideosCount());
         }
@@ -198,7 +205,7 @@ namespace USharpVideoQueue.Tests.Runtime
         }
 
         [Test]
-        public void CanOnlyRemoveFirstVideoOfOthersAfterLoadingHasFinished()
+        public void MasterCanRemoveVideosOfOtherPlayers()
         {
             //make player 1 master of the session
             MockGroup.Master = MockGroup.MockSets[1];
@@ -208,23 +215,16 @@ namespace USharpVideoQueue.Tests.Runtime
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
             queue0.QueueVideo(url1);
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
-            
+
             //master removes playing song
             queue1.RemoveVideo(0);
             Assert.AreEqual(1, queue0.QueuedVideosCount());
             Assert.AreEqual(1, queue1.QueuedVideosCount());
-            
-            // new video starts loading
-            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
-            
-            // master unsuccessfully tries to remove loading video
-            queue1.RemoveVideo(0);
-            Assert.AreEqual(1, queue0.QueuedVideosCount());
-            Assert.AreEqual(1, queue1.QueuedVideosCount());
-            
+
             // second video starts playing
+            MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoLoadStart());
             MockGroup.MockSets.ForEach(set => set.VideoQueueMock.Object.OnUSharpVideoPlay());
-            
+
             // master successfully removes second video
             queue1.RemoveVideo(0);
             Assert.AreEqual(0, queue0.QueuedVideosCount());
