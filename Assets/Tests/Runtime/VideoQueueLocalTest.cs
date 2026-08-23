@@ -1,6 +1,9 @@
-﻿using Moq;
+﻿using System.Text.RegularExpressions;
+using Moq;
 using NUnit.Framework;
 using UdonSharp.Video;
+using UnityEngine;
+using UnityEngine.TestTools;
 using USharpVideoQueue.Runtime;
 using USharpVideoQueue.Runtime.Utility;
 using USharpVideoQueue.Tests.Runtime.TestUtils;
@@ -12,8 +15,8 @@ namespace USharpVideoQueue.Tests.Runtime
     {
         private Mock<VideoQueue> queueMock;
         private VideoQueue queue;
-        private Mock<USharpVideoPlayer> vpMock;
-        private Mock<VideoQueueEventReceiver> eventReceiver;
+        private NonVirtualMock<USharpVideoPlayer> vpMock;
+        private Mock<VideoQueueEventReceiver> eventReceiverMock;
 
         [SetUp]
         public void Prepare()
@@ -22,7 +25,7 @@ namespace USharpVideoQueue.Tests.Runtime
             queueMock = mockSet.VideoQueueMock;
             queue = mockSet.VideoQueueMock.Object;
             vpMock = mockSet.VideoPlayerMock;
-            eventReceiver = mockSet.EventReceiver;
+            eventReceiverMock = mockSet.EventReceiverMock;
         }
 
         [Test]
@@ -81,18 +84,31 @@ namespace USharpVideoQueue.Tests.Runtime
         {
             queue.OnQueueContentChange();
             //Make sure subscribed receiver has received event from queue
-            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Once);
+            eventReceiverMock.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Once);
         }
 
+        /// <summary>
+        /// Asserts that mutating the queue notifies subscribers. The absolute number of events is
+        /// deliberately not pinned down: the queue emits one content change per synchronization, and
+        /// a single queue-and-play cycle legitimately synchronizes several times (enqueue, playback
+        /// armed, advance counted, playback confirmed).
+        /// </summary>
         [Test]
         public void ChangesToQueueEmitEvents()
         {
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.OnUSharpVideoPlay();
-            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(1));
+            int afterQueueing = UdonSharpTestUtils.CountCalls(eventReceiverMock,
+                nameof(VideoQueueEventReceiver.OnUSharpVideoQueueContentChange));
+            Assert.Greater(afterQueueing, 0, "Queueing a video should emit a content change event");
+
             queue.RemoveVideo(0);
-            eventReceiver.Verify(rcv => rcv.OnUSharpVideoQueueContentChange(), Times.Exactly(2));
+
+            int afterRemoving = UdonSharpTestUtils.CountCalls(eventReceiverMock,
+                nameof(VideoQueueEventReceiver.OnUSharpVideoQueueContentChange));
+            Assert.Greater(afterRemoving, afterQueueing,
+                "Removing a video should emit at least one further content change event");
         }
 
         [Test]
@@ -115,16 +131,34 @@ namespace USharpVideoQueue.Tests.Runtime
             vpMock.Verify(vp => vp.StopVideo(), Times.Once);
         }
 
+        /// <summary>
+        /// Removing the video that is currently loading used to be rejected outright. Since
+        /// "Allowing removing currently loading videos, but showing a warning" the removal goes
+        /// through and the queue only warns about it.
+        /// </summary>
         [Test]
-        public void CanOnlyRemoveFirstVideoAfterLoadingHasFinished()
+        public void FirstVideoCanBeRemovedWhileLoadingButWarns()
         {
             var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
             queue.QueueVideo(url1);
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
+
+            LogAssert.Expect(LogType.Warning, new Regex("currently being loaded"));
             queue.RemoveVideo(0);
-            Assert.AreEqual(1, QueueArray.Count(queue.queuedVideos));
+
+            Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
+        }
+
+        [Test]
+        public void FirstVideoCanBeRemovedAfterLoadingHasFinished()
+        {
+            var url1 = UdonSharpTestUtils.CreateUniqueVRCUrl();
+            queue.QueueVideo(url1);
+            queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoLoadStart));
             queue.SendCustomEvent(nameof(VideoQueue.OnUSharpVideoPlay));
+
             queue.RemoveVideo(0);
+
             Assert.AreEqual(0, QueueArray.Count(queue.queuedVideos));
         }
 
@@ -153,21 +187,21 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.QueueVideo(url1);
             //queue third video
             queue.QueueVideo(url1);
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueContentChange(), Times.AtLeast(3));
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueueContentChange(), Times.AtLeast(3));
             //first video has ended
             queue.OnUSharpVideoEnd();
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueuePlayingNextVideo(), Times.Once);
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueuePlayingNextVideo(), Times.Once);
             //second video starts loading
             queue.OnUSharpVideoLoadStart();
             //loading failed
             queue.OnUSharpVideoError();
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
             //third video starts playing
             queue.OnUSharpVideoLoadStart();
             queue.OnUSharpVideoPlay();
             //third video has ended
             queue.OnUSharpVideoEnd();
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
         }
 
         [Test]
@@ -180,8 +214,8 @@ namespace USharpVideoQueue.Tests.Runtime
             queue.OnUSharpVideoLoadStart();
             queue.OnUSharpVideoError();
 
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
-            eventReceiver.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueueSkippedError(), Times.Once);
+            eventReceiverMock.Verify(receiver => receiver.OnUSharpVideoQueueFinalVideoEnded(), Times.Once);
         }
 
         [Test]

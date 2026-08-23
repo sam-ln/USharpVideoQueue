@@ -950,7 +950,7 @@ namespace USharpVideoQueue.Runtime
                 : "[Invalid Player]";
         }
 
-        internal void _LogOwnerAndMaster(bool broadcast = false)
+        internal virtual void _LogOwnerAndMaster(bool broadcast = false)
         {
             VRCPlayerApi owner = Networking.GetOwner(gameObject);
             string ownerInfo = _GetPlayerInfo(owner);
