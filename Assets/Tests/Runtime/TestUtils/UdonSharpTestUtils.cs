@@ -99,6 +99,9 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
         /// tests stay easy to follow. Tests about the pause itself turn it back on with
         /// <see cref="VideoQueueMockSet.SetWaitSecondsBeforePlayback"/> and then decide when it ends
         /// using <see cref="VideoQueueMockSet.TimerMock"/>.
+        ///
+        /// <see cref="VideoQueue.StrictVideoOwnershipEnforcement"/> is turned on, which is not the
+        /// default a world gets. See the note where it is set.
         /// </remarks>
         public static VideoQueueMockSet CreateDefaultVideoQueueMockSet(int playerId = 1)
         {
@@ -110,6 +113,10 @@ namespace USharpVideoQueue.Tests.Runtime.TestUtils
             queueMock.Object.VideoPlayer = vpMock.Object;
             queueMock.Object.timer = timerMock.Object;
             queueMock.Object.waitSecondsBeforePlayback = 0;
+            // On for tests, off for worlds. The queue ships with the looser check so that a world
+            // cannot get a stuck queue out of the box, but tests should hold the queue to the
+            // stricter rule. Tests about the looser check turn it back off.
+            queueMock.Object.StrictVideoOwnershipEnforcement = true;
             queueMock.Object.RegisterCallbackReceiver(eventReceiverMock.Object);
             VideoQueueMockSet mockSet = new VideoQueueMockSet
             {

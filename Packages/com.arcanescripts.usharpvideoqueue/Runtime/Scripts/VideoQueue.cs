@@ -54,6 +54,12 @@ namespace USharpVideoQueue.Runtime
         [SerializeField]
         internal string[] urlDomainWhitelist;
 
+        [Tooltip(
+            "Enforce harder checks for video ownership to prevent unwanted skips. " +
+            "If enabled, you must make sure that no other system (for example USharpVideo UI) can change the video player ownership or else the queue will get stuck.")]
+        [UdonSynced]
+        public bool StrictVideoOwnershipEnforcement = false;
+
         [Tooltip("The USharpVideoPlayer object that this queue should manage")]
         public USharpVideoPlayer VideoPlayer;
 
@@ -89,6 +95,32 @@ namespace USharpVideoQueue.Runtime
         [UdonSynced] internal int videosPlayed = 0;
         
         internal int videosAnnounced = 0;
+
+        // Playback Tokens: Incrementing numbers handed out by the queue owner to players when they are instructed
+        // to take ownership of the video player and play a video. When these players then report a VideoEnded or VideoError event
+        // to the queue owner (by calling RPC_OnVideoOwnerVideoEnd or -Error) they will pass the playback token along.
+        // This way, the queue owner can decide whether the received event is valid and belongs to the currently playing video
+        // or it is stale / outdated / duplicated.
+
+        /// <summary>
+        /// Token sent by a client that has not received a play command yet. It never matches
+        /// <see cref="playbackTokenCounter"/>, which only counts up from zero, so such a client cannot
+        /// advance the queue while <see cref="StrictVideoOwnershipEnforcement"/> is on.
+        /// </summary>
+        internal const int NoPlaybackToken = -1;
+
+        /// <summary>
+        /// Used by the queue owner to keep track of the currently valid token. Incremented every time the queue advances, so a token handed
+        /// out for a previous video becomes invalid. Synced so it transfers in case the queue owner / instance master changes.
+        /// </summary>
+        [UdonSynced] internal int playbackTokenCounter = 0;
+
+        /// <summary>
+        /// Token this client received with the last play command from the queue owner. Only the client
+        /// the command was addressed to records it, so holding the current counter value is proof of
+        /// being the player told to play the video at the head of the queue.
+        /// </summary>
+        internal int playbackToken = NoPlaybackToken;
 
         internal int pauseTimerId = -1;
         internal bool initialized = false;
@@ -303,6 +335,9 @@ namespace USharpVideoQueue.Runtime
             QueueArray.Clear(queuedVideos);
             QueueArray.Clear(queuedTitles);
             QueueArray.Clear(queuedByPlayer);
+            //Invalidates tokens handed out before the clear, so a late end/error event cannot
+            //skip the first video of a refilled queue.
+            _IncrementPlaybackToken();
             _SynchronizeData();
             _ClearVideoPlayer();
 
@@ -508,7 +543,7 @@ namespace USharpVideoQueue.Runtime
             _SynchronizeData();
 
             SendCustomNetworkEvent(NetworkEventTarget.All, nameof(RPC_InvokeUserPlay),
-                videoOwnerPlayerID, nextURL);
+                videoOwnerPlayerID, nextURL, playbackTokenCounter);
         }
 
         /// <summary>
@@ -517,6 +552,8 @@ namespace USharpVideoQueue.Runtime
         /// <param name="force">If true, removes the first video even when the owner is currently loading.</param>
         private void _SkipToNextVideo()
         {
+
+            _IncrementPlaybackToken();
             _RemoveVideoData(0);
             _ClearVideoPlayer();
 
@@ -538,10 +575,14 @@ namespace USharpVideoQueue.Runtime
         /// </summary>
         /// <param name="playerID">Target player ID.</param>
         /// <param name="url">URL to play.</param>
+        /// <param name="token">Playback token identifying this video, echoed back on end/error.</param>
         [NetworkCallable]
-        public void RPC_InvokeUserPlay(int playerID, VRCUrl url)
+        public void RPC_InvokeUserPlay(int playerID, VRCUrl url, int token)
         {
             if (localPlayerId != playerID) return;
+
+            // Save assigned playback token to use in future calls of VideoPlayer RPC Callbacks
+            playbackToken = token;
 
             _LogDebug($"{nameof(RPC_InvokeUserPlay)} received by Player {_GetPlayerInfo(playerID)}: {url.Get()}", true);
             SendCallback(OnUSharpVideoQueueLocalPlayerIsUp);
@@ -549,18 +590,46 @@ namespace USharpVideoQueue.Runtime
         }
 
         /// <summary>
+        /// True if the sender is allowed to advance the queue on the strength of its playback token.
+        /// Under <see cref="StrictVideoOwnershipEnforcement"/> the token must match the one handed out
+        /// for the current video, which only the client told to play it ever receives. Always true when
+        /// strict enforcement is off, leaving the decision to <see cref="_SenderQueuedFirstVideo"/>.
+        /// </summary>
+        internal bool _PlaybackTokenIsValid(int token) =>
+            !StrictVideoOwnershipEnforcement || token == playbackTokenCounter;
+
+        /// <summary>
+        /// The check used when <see cref="StrictVideoOwnershipEnforcement"/> is off: the sender must be
+        /// the player who queued the video at the head of the queue. Callers must rule out an empty
+        /// queue first.
+        /// </summary>
+        internal bool _SenderQueuedFirstVideo(int playerID) =>
+            (int)First(queuedByPlayer) == playerID;
+
+        internal void _IncrementPlaybackToken()
+        {
+            if (!_IsOwner()) return;
+            playbackTokenCounter++;
+            _SynchronizeData();
+        }
+
+        /// <summary>
         /// NetworkCallable. Not intended to be called externally.
         /// Owner-side callback when the video finishes successfully on the video owner's client. Advances the queue.
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
+        /// <param name="token">Playback token the sender received with its play command.</param>
         [NetworkCallable]
-        public void RPC_OnVideoOwnerVideoEnd(int playerID)
+        public void RPC_OnVideoOwnerVideoEnd(int playerID, int token)
         {
             _LogRequest(nameof(RPC_OnVideoOwnerVideoEnd), playerID);
-            //Failsafe to mitigate unwanted skips
+            //Failsafes to mitigate unwanted skips
             //An advance is already scheduled, so this is a duplicate or late event.
             if (waitingForPauseBetweenVideos) return;
-            if (IsEmpty(queuedVideos) || (int)First(queuedByPlayer) != playerID) return;
+            if (IsEmpty(queuedVideos)) return;
+            //The sender is not the client that was told to play the current video.
+            if (!_PlaybackTokenIsValid(token)) return;
+            if (!StrictVideoOwnershipEnforcement && !_SenderQueuedFirstVideo(playerID)) return;
             _SkipToNextVideo();
         }
 
@@ -570,16 +639,19 @@ namespace USharpVideoQueue.Runtime
         /// Clears the waiting flag and advances the queue.
         /// </summary>
         /// <param name="playerID">Video owner player ID.</param>
+        /// <param name="token">Playback token the sender received with its play command.</param>
         [NetworkCallable]
-        public void RPC_OnVideoOwnerVideoError(int playerID)
+        public void RPC_OnVideoOwnerVideoError(int playerID, int token)
         {
             _LogRequest(nameof(RPC_OnVideoOwnerVideoError), playerID);
 
-            //Failsafe to mitigate unwanted skips
-            //An advance is already scheduled, so this is a duplicate or late event.
-            //Guarded before clearing the flag, so a late error cannot clear the loading state of the next video.
+            //Failsafes to mitigate unwanted skips. Guarded before clearing the flag below, so a late
+            //error cannot clear the loading state of the next video.
             if (waitingForPauseBetweenVideos) return;
             if (IsEmpty(queuedVideos)) return;
+        
+            if (!_PlaybackTokenIsValid(token)) return;
+            if (!StrictVideoOwnershipEnforcement && !_SenderQueuedFirstVideo(playerID)) return;
 
             VideoOwnerIsWaitingForPlayback = false;
             _SynchronizeData();
@@ -1022,7 +1094,8 @@ namespace USharpVideoQueue.Runtime
         {
             _LogDebug($"Received USharpVideoEnd! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
-                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoEnd), localPlayerId);
+                SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoEnd),
+                    localPlayerId, playbackToken);
         }
 
         /// <summary>
@@ -1033,7 +1106,7 @@ namespace USharpVideoQueue.Runtime
             _LogDebug($"Received USharpVideoError! Is player Video Player owner? {_IsVideoPlayerOwner()}");
             if (_IsVideoPlayerOwner())
                 SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(RPC_OnVideoOwnerVideoError),
-                    localPlayerId);
+                    localPlayerId, playbackToken);
         }
 
         /// <summary>
